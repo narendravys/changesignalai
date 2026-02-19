@@ -22,21 +22,21 @@ def upgrade():
     op.execute("DO $$ BEGIN CREATE TYPE feedbackstatus AS ENUM ('open', 'in_progress', 'resolved', 'closed'); EXCEPTION WHEN duplicate_object THEN null; END $$")
     op.execute("DO $$ BEGIN CREATE TYPE feedbackpriority AS ENUM ('low', 'medium', 'high', 'critical'); EXCEPTION WHEN duplicate_object THEN null; END $$")
     
-    # Add subscription fields to users table
-    op.execute("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT false NOT NULL")
-    op.execute("ALTER TABLE users ADD COLUMN subscription_status subscriptionstatus DEFAULT 'trial'::subscriptionstatus NOT NULL")
-    op.execute("ALTER TABLE users ADD COLUMN trial_ends_at TIMESTAMP WITH TIME ZONE")
-    op.execute("ALTER TABLE users ADD COLUMN subscription_ends_at TIMESTAMP WITH TIME ZONE")
-    op.execute("ALTER TABLE users ADD COLUMN stripe_customer_id VARCHAR(255)")
-    op.execute("ALTER TABLE users ADD COLUMN stripe_subscription_id VARCHAR(255)")
+    # Add subscription fields to users table (idempotent: skip if column exists)
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false NOT NULL")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status subscriptionstatus DEFAULT 'trial'::subscriptionstatus NOT NULL")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMP WITH TIME ZONE")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_ends_at TIMESTAMP WITH TIME ZONE")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255)")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_subscription_id VARCHAR(255)")
     
     # Add subscription configuration fields to organizations table
-    op.execute("ALTER TABLE organizations ADD COLUMN trial_period_days INTEGER DEFAULT 14 NOT NULL")
-    op.execute("ALTER TABLE organizations ADD COLUMN monthly_price INTEGER DEFAULT 199 NOT NULL")
+    op.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS trial_period_days INTEGER DEFAULT 14 NOT NULL")
+    op.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS monthly_price INTEGER DEFAULT 199 NOT NULL")
     
-    # Create feedback table using raw SQL
+    # Create feedback table (idempotent: skip if exists)
     op.execute("""
-        CREATE TABLE feedback (
+        CREATE TABLE IF NOT EXISTS feedback (
             id SERIAL PRIMARY KEY,
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             subject VARCHAR(255) NOT NULL,
@@ -51,9 +51,9 @@ def upgrade():
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
         )
     """)
-    op.execute("CREATE INDEX ix_feedback_id ON feedback (id)")
-    op.execute("CREATE INDEX ix_feedback_user_id ON feedback (user_id)")
-    op.execute("CREATE INDEX ix_feedback_status ON feedback (status)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_feedback_id ON feedback (id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_feedback_user_id ON feedback (user_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_feedback_status ON feedback (status)")
 
 
 def downgrade():

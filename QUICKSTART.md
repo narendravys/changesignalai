@@ -117,9 +117,14 @@ docker compose up -d
 ```
 
 ### Database Operations
+
+**On a new system or fresh database**, run migrations first so all tables (organizations, users, competitors, monitored_pages, snapshots, change_events, alerts, notification_preferences, comments, activity_logs, feedback, and hybrid-engine fields) are created in the correct sequence:
+
 ```bash
-# Run migrations
 docker compose exec backend alembic upgrade head
+```
+
+This runs: initial (base tables) → 003 (engagement) → 004 (subscription) → 005 (hybrid engine).
 
 # Create new migration
 docker compose exec backend alembic revision --autogenerate -m "Description"
