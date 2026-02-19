@@ -1,0 +1,22 @@
+Generic single-database configuration for Alembic.
+
+To generate an initial migration after setting up your database:
+
+```bash
+alembic revision --autogenerate -m "Initial migration"
+alembic upgrade head
+```
+
+To create a new migration after model changes:
+
+```bash
+alembic revision --autogenerate -m "Description of changes"
+alembic upgrade head
+```
+
+To rollback:
+
+```bash
+alembic downgrade -1  # Rollback one migration
+alembic downgrade base  # Rollback all migrations
+```

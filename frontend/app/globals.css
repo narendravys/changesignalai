@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 15, 23, 42;
+  --background-rgb: 248, 250, 252;
+  --card-bg: 255, 255, 255;
+  --border-subtle: 226, 232, 240;
+  --accent: 37, 99, 235;
+  --accent-hover: 29, 78, 216;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors font-medium;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary-200 text-secondary-800 px-4 py-2 rounded-lg hover:bg-secondary-300 transition-colors font-medium;
+  }
+  
+  .btn-danger {
+    @apply bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium;
+  }
+  
+  .card {
+    @apply bg-white border border-secondary-200 rounded-lg shadow-sm p-6 text-gray-900;
+  }
+  
+  .input {
+    @apply w-full px-4 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900;
+  }
+  
+  .label {
+    @apply block text-sm font-medium text-secondary-700 mb-2;
+  }
+}
+
+/* Ensure all form inputs are always visible with proper contrast */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  color: rgb(17, 24, 39) !important;
+  background-color: white !important;
+}
+
+/* Ensure placeholder text is visible but lighter */
+input::placeholder,
+textarea::placeholder {
+  color: rgb(156, 163, 175) !important;
+}
+
+select option {
+  color: rgb(17, 24, 39) !important;
+  background-color: white !important;
+  padding: 8px;
+}
+
+@layer utilities {
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes progress {
+    from {
+      width: 100%;
+    }
+    to {
+      width: 0%;
+    }
+  }
+  
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
+  }
+  
+  .animate-progress {
+    animation: progress linear;
+  }
+
+  @keyframes modal-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  .modal-enter {
+    animation: modal-enter 0.2s ease-out;
+  }
+}
