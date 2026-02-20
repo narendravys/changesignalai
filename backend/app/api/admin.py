@@ -17,7 +17,7 @@ from app.models.competitor import Competitor
 from app.models.change_event import ChangeEvent
 from app.models.activity_log import ActivityLog
 from app.schemas.admin import (
-    UserListResponse, UserSubscriptionUpdate, SubscriptionConfigUpdate,
+    UserListResponse, UserSubscriptionUpdate, UserUpdate, SubscriptionConfigUpdate,
     SystemStatsResponse, UserActivityResponse
 )
 from app.schemas.feedback import FeedbackResponse, FeedbackUpdate
@@ -107,6 +107,60 @@ async def get_user_details(
         created_at=user.created_at,
         last_login=user.last_login
     )
+
+
+@router.patch("/users/{user_id}", response_model=UserListResponse)
+async def update_user(
+    user_id: int,
+    update_data: UserUpdate,
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update user role/flags (Admin only). e.g. set is_admin to make user an org admin.
+    Cannot remove is_admin from yourself.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    if update_data.is_admin is False and user.id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot remove your own admin role"
+        )
+    try:
+        if update_data.is_admin is not None:
+            user.is_admin = update_data.is_admin
+        if update_data.is_active is not None:
+            user.is_active = update_data.is_active
+        db.commit()
+        db.refresh(user)
+        logger.info(f"Admin {current_user.email} updated user {user.email} (is_admin={user.is_admin}, is_active={user.is_active})")
+        return UserListResponse(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            is_active=user.is_active,
+            is_admin=user.is_admin,
+            is_superuser=user.is_superuser,
+            subscription_status=user.subscription_status,
+            trial_ends_at=user.trial_ends_at,
+            subscription_ends_at=user.subscription_ends_at,
+            organization_id=user.organization_id,
+            organization_name=user.organization.name if user.organization else None,
+            created_at=user.created_at,
+            last_login=user.last_login
+        )
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating user: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user"
+        )
 
 
 @router.patch("/users/{user_id}/subscription", response_model=UserListResponse)
@@ -234,24 +288,35 @@ async def list_all_feedback(
     """
     List all user feedback (Admin only)
     """
-    query = db.query(Feedback).join(User)
-    
+    from sqlalchemy.orm import joinedload
+    from sqlalchemy.exc import ProgrammingError
+
+    query = db.query(Feedback).options(joinedload(Feedback.user)).order_by(desc(Feedback.created_at))
     if status_filter:
         query = query.filter(Feedback.status == status_filter)
-    
-    feedback_list = query.order_by(desc(Feedback.created_at)).offset(skip).limit(limit).all()
-    
-    # Enrich with user details
+
+    try:
+        feedback_list = query.offset(skip).limit(limit).all()
+    except ProgrammingError as e:
+        logger.exception("Feedback list query failed (table may be missing): %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Feedback table not available. Run migrations: docker compose exec backend alembic upgrade head"
+        ) from e
+
+    # Enrich with user details; normalize enum to value for consistent serialization
     result = []
     for feedback in feedback_list:
+        status_val = getattr(feedback.status, "value", None) or str(feedback.status) if feedback.status else "open"
+        priority_val = getattr(feedback.priority, "value", None) or str(feedback.priority) if feedback.priority else "medium"
         feedback_dict = {
             "id": feedback.id,
             "user_id": feedback.user_id,
             "subject": feedback.subject,
             "description": feedback.description,
             "category": feedback.category,
-            "status": feedback.status,
-            "priority": feedback.priority,
+            "status": status_val,
+            "priority": priority_val,
             "admin_notes": feedback.admin_notes,
             "resolved_by": feedback.resolved_by,
             "resolved_at": feedback.resolved_at,
@@ -261,7 +326,7 @@ async def list_all_feedback(
             "user_name": feedback.user.full_name if feedback.user else None
         }
         result.append(FeedbackResponse(**feedback_dict))
-    
+
     return result
 
 
@@ -337,22 +402,22 @@ async def get_system_activity(
     """
     Get system-wide activity logs (Admin only)
     """
-    query = db.query(ActivityLog).join(User)
+    query = db.query(ActivityLog).outerjoin(User, User.id == ActivityLog.user_id)
     
     if user_id:
         query = query.filter(ActivityLog.user_id == user_id)
     
-    activities = query.order_by(desc(ActivityLog.timestamp)).offset(skip).limit(limit).all()
+    activities = query.order_by(desc(ActivityLog.created_at)).offset(skip).limit(limit).all()
     
     result = []
     for activity in activities:
         activity_dict = {
-            "user_id": activity.user_id,
+            "user_id": activity.user_id or 0,
             "user_email": activity.user.email if activity.user else "Unknown",
-            "action": activity.action,
+            "action": activity.action_type,
             "description": activity.description,
             "extra_data": activity.extra_data,
-            "timestamp": activity.timestamp
+            "timestamp": activity.created_at or datetime.now(timezone.utc)
         }
         result.append(UserActivityResponse(**activity_dict))
     

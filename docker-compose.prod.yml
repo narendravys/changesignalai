@@ -1,0 +1,34 @@
+# Production override: built frontend, no dev mounts, no --reload
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Or:    docker compose --profile prod -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Set NEXT_PUBLIC_API_URL for your deployment (must be the URL the browser will use to reach the API):
+#   build args: NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+# Then rebuild frontend: docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend --build-arg NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+
+services:
+  backend:
+    volumes: []
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
+        NEXT_PUBLIC_API_VERSION: ${NEXT_PUBLIC_API_VERSION:-v1}
+    image: changesignal-frontend:latest
+    volumes: []
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    command: ["node", "server.js"]
+    mem_limit: 512m
+
+  celery-worker:
+    volumes: []
+
+  celery-beat:
+    volumes: []

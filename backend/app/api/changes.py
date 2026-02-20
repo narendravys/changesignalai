@@ -92,6 +92,64 @@ async def list_change_events(
     return result
 
 
+@router.get("/stats/summary")
+async def get_change_summary(
+    days: int = Query(7, ge=1, le=90),
+    changes_only: bool = Query(False, description="If true, only count events where changes were detected"),
+    current_user: User = Depends(get_current_user_with_subscription),
+    db: Session = Depends(get_db)
+):
+    """Get summary statistics of changes (or all monitoring activity). Admins see all orgs."""
+    
+    from datetime import timedelta
+    from sqlalchemy import func, and_
+    
+    date_from = datetime.utcnow() - timedelta(days=days)
+    
+    # Base query
+    base_query = db.query(ChangeEvent).join(
+        MonitoredPage
+    ).join(
+        Competitor
+    ).filter(
+        ChangeEvent.created_at >= date_from
+    )
+    # Restrict to user's org unless admin/superuser
+    if not current_user.is_admin and not current_user.is_superuser:
+        base_query = base_query.filter(Competitor.organization_id == current_user.organization_id)
+    
+    if changes_only:
+        base_query = base_query.filter(ChangeEvent.change_detected == True)
+    
+    # Total changes
+    total_changes = base_query.count()
+    
+    # Changes by severity
+    severity_counts = {}
+    for severity in Severity:
+        count = base_query.filter(ChangeEvent.severity == severity).count()
+        severity_counts[severity.value] = count
+    
+    # Changes by type
+    type_counts = {}
+    for change_type in ChangeType:
+        count = base_query.filter(ChangeEvent.change_type == change_type).count()
+        type_counts[change_type.value] = count
+    
+    # Unacknowledged changes
+    unacknowledged = base_query.filter(ChangeEvent.acknowledged == False).count()
+    
+    return {
+        "period_days": days,
+        "total_changes": total_changes,
+        "by_severity": severity_counts,
+        "by_type": type_counts,
+        "unacknowledged": unacknowledged,
+        "date_from": date_from.isoformat(),
+        "date_to": datetime.utcnow().isoformat()
+    }
+
+
 @router.get("/{event_id}", response_model=ChangeEventDetail)
 async def get_change_event(
     event_id: int,
@@ -172,64 +230,3 @@ async def update_change_event(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update change event"
         )
-
-
-@router.get("/stats/summary")
-async def get_change_summary(
-    days: int = Query(7, ge=1, le=90),
-    changes_only: bool = Query(False, description="If true, only count events where changes were detected"),
-    current_user: User = Depends(get_current_user_with_subscription),
-    db: Session = Depends(get_db)
-):
-    """Get summary statistics of changes (or all monitoring activity)"""
-    
-    from datetime import timedelta
-    from sqlalchemy import func, and_
-    
-    date_from = datetime.utcnow() - timedelta(days=days)
-    
-    # Build filter conditions
-    filter_conditions = [
-        Competitor.organization_id == current_user.organization_id,
-        ChangeEvent.created_at >= date_from
-    ]
-    
-    if changes_only:
-        filter_conditions.append(ChangeEvent.change_detected == True)
-    
-    # Base query
-    base_query = db.query(ChangeEvent).join(
-        MonitoredPage
-    ).join(
-        Competitor
-    ).filter(
-        and_(*filter_conditions)
-    )
-    
-    # Total changes
-    total_changes = base_query.count()
-    
-    # Changes by severity
-    severity_counts = {}
-    for severity in Severity:
-        count = base_query.filter(ChangeEvent.severity == severity).count()
-        severity_counts[severity.value] = count
-    
-    # Changes by type
-    type_counts = {}
-    for change_type in ChangeType:
-        count = base_query.filter(ChangeEvent.change_type == change_type).count()
-        type_counts[change_type.value] = count
-    
-    # Unacknowledged changes
-    unacknowledged = base_query.filter(ChangeEvent.acknowledged == False).count()
-    
-    return {
-        "period_days": days,
-        "total_changes": total_changes,
-        "by_severity": severity_counts,
-        "by_type": type_counts,
-        "unacknowledged": unacknowledged,
-        "date_from": date_from.isoformat(),
-        "date_to": datetime.utcnow().isoformat()
-    }

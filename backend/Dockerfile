@@ -45,6 +45,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code and set ownership
 COPY --chown=appuser:appuser . .
 
+# Entrypoint: run migrations then exec command (set RUN_MIGRATIONS=0 to skip)
+RUN chmod +x /app/entrypoint.sh
+
 # Switch to appuser to install Playwright browsers
 USER appuser
 
@@ -54,5 +57,5 @@ RUN playwright install chromium
 # Expose port
 EXPOSE 8000
 
-# Run the application
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

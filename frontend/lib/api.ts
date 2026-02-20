@@ -6,6 +6,12 @@ import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION || "v1";
 
+/** Base URL used for API requests (for error messages / debugging). */
+export const getApiBaseUrl = () => `${API_URL}/${API_VERSION}`;
+
+/** Backend health check URL (same host, no /v1). Use to test if the API is reachable. */
+export const getApiHealthUrl = () => `${API_URL}/health`;
+
 // Helper function to format API errors
 export function formatApiError(error: any, fallbackMessage: string): string {
   const detail = error.response?.data?.detail;
@@ -346,6 +352,11 @@ class ApiClient {
 
   async adminGetUser(userId: number) {
     const response = await this.client.get(`/admin/users/${userId}`);
+    return response.data;
+  }
+
+  async adminUpdateUser(userId: number, data: { is_admin?: boolean; is_active?: boolean }) {
+    const response = await this.client.patch(`/admin/users/${userId}`, data);
     return response.data;
   }
 

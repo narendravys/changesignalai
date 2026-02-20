@@ -53,7 +53,7 @@ export default function SubscriptionBanner() {
 
   const getBannerColor = () => {
     if (state === "expired" || state === "trial_expired" || state === "cancelled") return "bg-slate-800";
-    if (subscriptionStatus.days_remaining !== null && subscriptionStatus.days_remaining <= 3) return "bg-amber-600";
+    if (subscriptionStatus.days_remaining != null && subscriptionStatus.days_remaining <= 3) return "bg-amber-600";
     return "bg-blue-600";
   };
 
@@ -61,7 +61,7 @@ export default function SubscriptionBanner() {
     if (state === "expired") return "Your subscription has expired. Renew now to continue using ChangeSignal AI.";
     if (state === "trial_expired") return "Your trial has ended. Upgrade now to continue using ChangeSignal AI.";
     if (state === "cancelled") return "Your subscription has been cancelled. Reactivate to continue.";
-    if (state === "trial_ending_soon" && subscriptionStatus.days_remaining !== null) {
+    if (state === "trial_ending_soon" && subscriptionStatus.days_remaining != null) {
       const d = subscriptionStatus.days_remaining;
       return `Your trial ends in ${d} day${d !== 1 ? "s" : ""}. Upgrade to keep full access.`;
     }

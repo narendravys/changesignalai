@@ -1,0 +1,28 @@
+# Dependencies and build output (rebuilt in image)
+node_modules
+.next
+out
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env (use build args in Dockerfile instead)
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# Git and IDE
+.git
+.gitignore
+.vscode
+.idea
+*.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile*
+.dockerignore

@@ -128,8 +128,9 @@ async def login(
     - Validates credentials
     - Returns access token
     """
-    # Find user by email
-    user = db.query(User).filter(User.email == credentials.email).first()
+    # Find user by email (load organization for response)
+    from sqlalchemy.orm import joinedload
+    user = db.query(User).options(joinedload(User.organization)).filter(User.email == credentials.email).first()
     
     if not user:
         raise HTTPException(

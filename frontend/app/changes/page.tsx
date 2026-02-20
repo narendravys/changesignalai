@@ -9,53 +9,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { 
   FiFilter, FiCheck, FiExternalLink, FiAlertCircle,
   FiClock, FiZap, FiTrendingUp, FiSearch, FiDownload, FiShield, FiCheckCircle,
-  FiImage, FiCode
+  FiCode
 } from "react-icons/fi";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/useToast";
-
-function SnapshotImage({ snapshotId, className = "" }: { snapshotId: number; className?: string }) {
-  const [src, setSrc] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  useEffect(() => {
-    let objectUrl: string | null = null;
-    setLoading(true);
-    setError(false);
-    api
-      .getSnapshotScreenshot(snapshotId)
-      .then((blob) => {
-        objectUrl = URL.createObjectURL(blob);
-        setSrc(objectUrl);
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-    return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [snapshotId]);
-  if (loading) {
-    return (
-      <div className={`flex items-center justify-center bg-gray-100 rounded-xl ${className}`}>
-        <span className="text-gray-500 text-sm">Loading snapshot…</span>
-      </div>
-    );
-  }
-  if (error || !src) {
-    return (
-      <div className={`flex items-center justify-center bg-gray-100 rounded-xl text-gray-500 text-sm ${className}`}>
-        Snapshot unavailable
-      </div>
-    );
-  }
-  return (
-    <img
-      src={src}
-      alt="Page snapshot at time of detection"
-      className={`rounded-xl border border-gray-200 max-h-[320px] object-contain object-left-top bg-white ${className}`}
-    />
-  );
-}
 
 export default function ChangesPage() {
   const toast = useToast();
@@ -433,52 +390,31 @@ export default function ChangesPage() {
                         {change.summary}
                       </h3>
 
-                      {/* Details */}
+                      {/* Details: Business Impact and Recommended Action always shown */}
                       <div className="grid md:grid-cols-2 gap-4 mb-4">
-                        {change.business_impact && (
-                          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <FiZap className="w-4 h-4 text-blue-600" />
-                              <span className="text-sm font-bold text-blue-900">
-                                Business Impact
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-700">
-                              {change.business_impact}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {change.recommended_action && (
-                          <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <FiCheck className="w-4 h-4 text-green-600" />
-                              <span className="text-sm font-bold text-green-900">
-                                Recommended Action
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-700">
-                              {change.recommended_action}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Detected change snapshot */}
-                      {change.snapshot_has_screenshot && (
-                        <div className="mb-4">
+                        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
                           <div className="flex items-center space-x-2 mb-2">
-                            <FiImage className="w-4 h-4 text-slate-600" />
-                            <span className="text-sm font-bold text-slate-900">
-                              Detected change snapshot
+                            <FiZap className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm font-bold text-blue-900">
+                              Business Impact
                             </span>
                           </div>
-                          <SnapshotImage
-                            snapshotId={change.snapshot_id}
-                            className="w-full min-h-[120px]"
-                          />
+                          <p className="text-sm text-gray-700">
+                            {change.business_impact?.trim() || "—"}
+                          </p>
                         </div>
-                      )}
+                        <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <FiCheck className="w-4 h-4 text-green-600" />
+                            <span className="text-sm font-bold text-green-900">
+                              Recommended Action
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700">
+                            {change.recommended_action?.trim() || "—"}
+                          </p>
+                        </div>
+                      </div>
 
                       {/* Diff preview */}
                       {change.diff_preview && (

@@ -1,0 +1,12 @@
+# Environment (never commit real secrets)
+.env
+
+# Generated screenshots
+backend/screenshots/
+
+# Playwright / test artifacts
+frontend/playwright-report/
+frontend/test-results/
+
+# Optional: uncomment if root package.json is only for tooling
+# /package-lock.json

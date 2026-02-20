@@ -19,6 +19,7 @@ export function useAuth() {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
+        setUser(null);
         setLoading(false);
         return;
       }
@@ -27,7 +28,8 @@ export function useAuth() {
       setUser(userData);
     } catch (error) {
       console.error("Auth check failed:", error);
-      api.clearToken();
+      api.logout();
+      setUser(null);
     } finally {
       setLoading(false);
     }

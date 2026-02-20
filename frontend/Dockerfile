@@ -13,8 +13,14 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN mkdir -p public
 
-# Set environment variables for build
+# Build-time args for API URL (used by NEXT_PUBLIC_* at build time)
+ARG NEXT_PUBLIC_API_URL=http://localhost:8001
+ARG NEXT_PUBLIC_API_VERSION=v1
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_VERSION=$NEXT_PUBLIC_API_VERSION
+
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ActivityFeed from "@/components/ActivityFeed";
-import { api } from "@/lib/api";
+import { api, getApiBaseUrl, getApiHealthUrl } from "@/lib/api";
 import { ChangeSummary, ChangeEvent } from "@/lib/types";
 import { 
   FiAlertCircle, FiUsers, FiMonitor, FiTrendingUp, 
@@ -18,6 +18,7 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<ChangeSummary | null>(null);
   const [recentChanges, setRecentChanges] = useState<ChangeEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -27,15 +28,34 @@ export default function DashboardPage() {
   }, []);
 
   const loadDashboardData = async () => {
+    setError(null);
     try {
       const [summaryData, changesData] = await Promise.all([
         api.getChangeSummary(7, false), // Show all monitoring activity, not just changes
         api.getChangeEvents({ limit: 10, changes_only: false }),
       ]);
       setSummary(summaryData);
-      setRecentChanges(changesData);
-    } catch (error) {
-      console.error("Failed to load dashboard data:", error);
+      setRecentChanges(changesData || []);
+    } catch (err: any) {
+      console.error("Failed to load dashboard data:", err);
+      let message: string;
+      if (err.response?.status === 401) {
+        message = "Please log in again.";
+      } else if (err.response?.status === 402) {
+        message = "Subscription required.";
+      } else if (
+        !err.response &&
+        (err.code === "ERR_NETWORK" || err.message?.includes("Network Error"))
+      ) {
+        message = `Cannot reach the API at ${getApiBaseUrl()}. Ensure the backend is running (e.g. \`docker compose up -d\` or run the FastAPI server) and that \`NEXT_PUBLIC_API_URL\` in frontend \`.env.local\` matches it (e.g. http://localhost:8001).`;
+      } else {
+        message = err.response?.data?.detail
+          ? (Array.isArray(err.response.data.detail) ? err.response.data.detail.map((e: any) => e.msg || e.message).join(", ") : String(err.response.data.detail))
+          : `Failed to load dashboard. ${err.response?.status ? `Status ${err.response.status}.` : ""} Check your connection and try again.`;
+      }
+      setError(message);
+      setSummary(null);
+      setRecentChanges([]);
     } finally {
       setLoading(false);
     }
@@ -108,6 +128,36 @@ export default function DashboardPage() {
               </Link>
             </div>
           </div>
+
+          {/* Error Banner */}
+          {error && (
+            <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-amber-800 font-medium">{error}</p>
+                  {(error.includes("Cannot reach the API") || error.includes("NEXT_PUBLIC_API_URL")) && (
+                    <p className="mt-2 text-sm text-amber-700">
+                      <a
+                        href={getApiHealthUrl()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-amber-900"
+                      >
+                        Test connection: {getApiHealthUrl()}
+                      </a>
+                      {" — if this link fails, start the backend (e.g. docker compose up -d)."}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => { setLoading(true); loadDashboardData(); }}
+                  className="shrink-0 px-4 py-2 bg-amber-200 hover:bg-amber-300 text-amber-900 rounded-xl font-medium transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Alert Banner */}
           {(criticalCount > 0 || highCount > 0) && (
@@ -232,7 +282,10 @@ export default function DashboardPage() {
                   Severity Distribution
                 </h2>
                 <div className="space-y-4">
-                  {summary && Object.entries(summary.by_severity).map(([severity, count]) => (
+                  {Object.entries(summary?.by_severity ?? {}).length === 0 ? (
+                    <p className="text-sm text-gray-500">No activity in the last 7 days.</p>
+                  ) : (
+                  Object.entries(summary?.by_severity ?? {}).map(([severity, count]) => (
                     <div key={severity} className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${getSeverityGradient(severity)}`}></div>
@@ -248,7 +301,8 @@ export default function DashboardPage() {
                         <span className="text-lg font-bold text-gray-900 w-8 text-right">{count}</span>
                       </div>
                     </div>
-                  ))}
+                  ))
+                  )}
                 </div>
               </div>
             </div>

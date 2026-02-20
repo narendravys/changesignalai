@@ -34,6 +34,12 @@ class UserSubscriptionUpdate(BaseModel):
     extend_days: Optional[int] = Field(None, description="Extend (positive) or reduce (negative) trial/subscription by N days")
 
 
+class UserUpdate(BaseModel):
+    """Schema for admin updating user role/flags"""
+    is_admin: Optional[bool] = None
+    is_active: Optional[bool] = None
+
+
 class SubscriptionConfigUpdate(BaseModel):
     """Schema for updating subscription configuration"""
     trial_period_days: Optional[int] = Field(None, ge=0, le=90)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Layout from "@/components/Layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -22,7 +22,7 @@ const RENEW_STEPS = [
   { step: 3, label: "Complete secure checkout", href: "#" },
 ];
 
-export default function SubscriptionPage() {
+function SubscriptionPageContent() {
   const toast = useToast();
   const searchParams = useSearchParams();
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatusFromApi | null>(null);
@@ -304,5 +304,23 @@ export default function SubscriptionPage() {
         </div>
       </Layout>
     </ProtectedRoute>
+  );
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense
+      fallback={
+        <ProtectedRoute>
+          <Layout>
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+          </Layout>
+        </ProtectedRoute>
+      }
+    >
+      <SubscriptionPageContent />
+    </Suspense>
   );
 }

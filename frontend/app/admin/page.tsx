@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/useToast";
 import { 
@@ -14,6 +15,7 @@ import { formatDistanceToNow } from "date-fns";
 
 export default function AdminDashboard() {
   const toast = useToast();
+  const { user: currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<"overview" | "users" | "feedback" | "activity" | "config">("overview");
   const [loading, setLoading] = useState(true);
   
@@ -54,7 +56,7 @@ export default function AdminDashboard() {
         setUsers(usersData);
       } else if (activeTab === "feedback") {
         const feedbackData = await api.adminGetAllFeedback(0, 100);
-        setFeedback(feedbackData);
+        setFeedback(Array.isArray(feedbackData) ? feedbackData : []);
       } else if (activeTab === "activity") {
         const activityData = await api.adminGetSystemActivity(0, 100);
         setActivity(activityData);
@@ -126,6 +128,26 @@ export default function AdminDashboard() {
       setConfig(configEdit);
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Failed to update configuration");
+    }
+  };
+
+  const handleToggleAdmin = async (user: any) => {
+    const newAdmin = !user.is_admin;
+    if (user.is_superuser) {
+      toast.error("Superuser role cannot be changed from the UI.");
+      return;
+    }
+    if (user.id === currentUser?.id && !newAdmin) {
+      toast.error("You cannot remove your own admin role.");
+      return;
+    }
+    try {
+      await api.adminUpdateUser(user.id, { is_admin: newAdmin });
+      toast.success(newAdmin ? "User is now an admin." : "Admin role removed.");
+      loadData();
+    } catch (error: any) {
+      const detail = error.response?.data?.detail;
+      toast.error(typeof detail === "string" ? detail : detail?.message || "Failed to update user");
     }
   };
 
@@ -296,6 +318,7 @@ export default function AdminDashboard() {
                           <tr>
                             <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">User</th>
                             <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Organization</th>
+                            <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Admin</th>
                             <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Status</th>
                             <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Subscription</th>
                             <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Actions</th>
@@ -312,6 +335,15 @@ export default function AdminDashboard() {
                               </td>
                               <td className="px-6 py-4 text-gray-900">{user.organization_name}</td>
                               <td className="px-6 py-4">
+                                {(user.is_admin || user.is_superuser) ? (
+                                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
+                                    Admin
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400 text-sm">—</span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4">
                                 <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
                                   user.subscription_status === "trial" ? "bg-blue-100 text-blue-700" :
                                   user.subscription_status === "active" ? "bg-green-100 text-green-700" :
@@ -327,10 +359,25 @@ export default function AdminDashboard() {
                                    "No expiry set"}
                                 </p>
                               </td>
-                              <td className="px-6 py-4">
+                              <td className="px-6 py-4 flex items-center gap-2">
+                                {!user.is_superuser && (
+                                  <button
+                                    onClick={() => handleToggleAdmin(user)}
+                                    disabled={user.id === currentUser?.id && user.is_admin}
+                                    title={user.is_admin ? "Remove admin" : "Make admin"}
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                      user.is_admin
+                                        ? "bg-amber-100 text-amber-800 hover:bg-amber-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        : "bg-purple-100 text-purple-800 hover:bg-purple-200"
+                                    }`}
+                                  >
+                                    {user.is_admin ? "Remove admin" : "Make admin"}
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => setSelectedUser(user)}
                                   className="text-purple-600 hover:text-purple-800 font-semibold"
+                                  title="Edit subscription"
                                 >
                                   <FiEdit className="w-5 h-5" />
                                 </button>
@@ -357,6 +404,30 @@ export default function AdminDashboard() {
                             <p><strong>Email:</strong> {selectedUser.email}</p>
                             <p><strong>Name:</strong> {selectedUser.full_name}</p>
                             <p><strong>Status:</strong> {selectedUser.subscription_status}</p>
+                            {!selectedUser.is_superuser && (
+                              <div className="mt-3 flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id="user-is-admin"
+                                  checked={!!selectedUser.is_admin}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    api.adminUpdateUser(selectedUser.id, { is_admin: checked })
+                                      .then(() => {
+                                        toast.success(checked ? "User is now an admin." : "Admin role removed.");
+                                        setSelectedUser((u: any) => u ? { ...u, is_admin: checked } : null);
+                                        loadData();
+                                      })
+                                      .catch((err: any) => toast.error(err.response?.data?.detail || "Failed to update"));
+                                  }}
+                                  disabled={selectedUser.id === currentUser?.id && selectedUser.is_admin}
+                                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                />
+                                <label htmlFor="user-is-admin" className="text-sm font-medium text-gray-700">
+                                  Organization admin
+                                </label>
+                              </div>
+                            )}
                             {selectedUser.trial_ends_at && (
                               <p className="text-sm text-gray-600 mt-1">
                                 Trial ends: {formatDistanceToNow(new Date(selectedUser.trial_ends_at), { addSuffix: true })}
@@ -417,6 +488,15 @@ export default function AdminDashboard() {
               {activeTab === "feedback" && (
                 <div className="space-y-6">
                   <div className="bg-white rounded-xl border-2 border-gray-200 overflow-hidden">
+                    {!Array.isArray(feedback) ? (
+                      <div className="p-8 text-center text-gray-500">Failed to load feedback.</div>
+                    ) : feedback.length === 0 ? (
+                      <div className="p-8 text-center text-gray-500">
+                        <FiMessageSquare className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                        <p className="font-medium">No feedback yet</p>
+                        <p className="text-sm mt-1">User feedback will appear here when submitted from Settings or the feedback form.</p>
+                      </div>
+                    ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead className="bg-gray-50">
@@ -471,6 +551,7 @@ export default function AdminDashboard() {
                         </tbody>
                       </table>
                     </div>
+                    )}
                   </div>
 
                   {/* Feedback Edit Modal */}
@@ -523,13 +604,16 @@ export default function AdminDashboard() {
                   <h3 className="text-xl font-bold text-gray-900 mb-4">System Activity Log</h3>
                   <div className="space-y-4">
                     {activity.map((log, index) => (
-                      <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
-                        <FiClock className="w-5 h-5 text-gray-400 mt-1" />
-                        <div className="flex-1">
+                      <div key={log.timestamp ? `${log.user_id}-${log.timestamp}-${index}` : index} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
+                        <FiClock className="w-5 h-5 text-gray-400 mt-1 shrink-0" />
+                        <div className="flex-1 min-w-0">
                           <p className="font-semibold text-gray-900">{log.user_email}</p>
+                          {log.action && (
+                            <p className="text-xs text-purple-600 font-medium uppercase tracking-wide mt-0.5">{log.action}</p>
+                          )}
                           <p className="text-gray-700">{log.description}</p>
                           <p className="text-sm text-gray-500 mt-1">
-                            {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                            {log.timestamp ? formatDistanceToNow(new Date(log.timestamp), { addSuffix: true }) : "—"}
                           </p>
                         </div>
                       </div>

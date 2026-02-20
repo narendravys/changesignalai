@@ -1,5 +1,7 @@
 # ChangeSignal AI - Quick Start Guide
 
+**First-time setup or production deploy?** See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for prerequisites, `.env` setup, and production build steps.
+
 ## 🎉 Application Successfully Running!
 
 All services are up and running. Here's how to access them:
@@ -117,7 +119,6 @@ docker compose up -d
 ```
 
 ### Database Operations
-
 **On a new system or fresh database**, run migrations first so all tables (organizations, users, competitors, monitored_pages, snapshots, change_events, alerts, notification_preferences, comments, activity_logs, feedback, and hybrid-engine fields) are created in the correct sequence:
 
 ```bash
@@ -148,6 +149,32 @@ The following background tasks are running:
 - **Every 24 hours**: Clean up old snapshots (older than 90 days)
 
 ## Troubleshooting
+
+### Dashboard says "Cannot reach the API at http://localhost:8001/v1"?
+The frontend cannot reach the backend. Do the following:
+
+1. **Start the backend** (if using Docker):
+   ```bash
+   docker compose up -d
+   ```
+   Or start only backend + dependencies: `docker compose up -d postgres redis backend`
+
+2. **Check that the API is reachable** in the same browser:
+   - Open [http://localhost:8001/health](http://localhost:8001/health) — you should see `{"status":"healthy"}`.
+   - If that link fails, the backend is not running or not reachable on port 8001.
+
+3. **If you run the frontend on the host** (e.g. `cd frontend && npm run dev`):
+   - Create `frontend/.env.local` from `frontend/.env.local.example`.
+   - Set `NEXT_PUBLIC_API_URL=http://localhost:8001` (or the URL where your backend is reachable).
+   - Restart the frontend dev server after changing env.
+
+4. **If you use a different host/port for the API**, set `NEXT_PUBLIC_API_URL` in `frontend/.env.local` to that base URL (e.g. `http://my-server:8001`).
+
+5. **Health link works but dashboard still fails?** Often CORS: you opened the app at **http://127.0.0.1:3000** but the backend only allows **http://localhost:3000**. Fix: in the project root `.env` set:
+   ```bash
+   ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://localhost:8001,http://127.0.0.1:8001
+   ```
+   Then restart the backend: `docker compose restart backend`. Or use the same host in the browser (e.g. open http://localhost:3000 instead of 127.0.0.1).
 
 ### Frontend not loading or container keeps restarting?
 On some Linux/Docker setups the Next.js dev server can exit with a compiler error (SIGBUS). If the frontend container never shows "Ready" and keeps restarting:
