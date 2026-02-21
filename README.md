@@ -81,8 +81,8 @@ scrapper-agent/
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd scrapper-agent
+git clone https://github.com/narendravys/changesignalai.git
+cd changesignalai
 ```
 
 ### 2. Configure Environment Variables
@@ -468,4 +468,4 @@ For issues and questions:
 
 ---
 
-Built with ❤️ using FastAPI, Next.js, and OpenAI
+Built with ❤️ by Narendra Vyas using FastAPI, Next.js, and OpenAI
