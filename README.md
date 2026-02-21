@@ -94,6 +94,9 @@ cp .env.example .env
 # One .env at project root is used by backend, frontend, and Docker. Edit and set (at minimum):
 # - SECRET_KEY (generate a secure 32+ character string)
 # - OPENAI_API_KEY (your OpenAI API key)
+# - GROQ_API_KEY= (Your Groq API key)
+# - GROQ_MODEL= (typically the llama model which suits best for you)
+# - GROQ_TEMPERATURE=(set min for best results eg: 0.1)
 # - SLACK_WEBHOOK_URL (optional)
 # - SMTP credentials (optional)
 ```
