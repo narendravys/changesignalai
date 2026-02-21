@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { api, formatApiError } from "@/lib/api";
 import { useToast } from "@/hooks/useToast";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -62,13 +64,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4">
       <div className="max-w-md w-full">
         {/* Back to home button */}
         <div className="mb-6">
           <button
             onClick={() => router.push("/")}
-            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -88,12 +90,12 @@ export default function LoginPage() {
               ChangeSignal AI
             </h1>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-slate-400">
             Start monitoring your competitors today
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 p-8">
           <div className="flex border-b border-gray-200 mb-6">
             <button
               className={`flex-1 pb-3 text-center font-semibold transition-colors ${
@@ -144,10 +146,16 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="label">Password</label>
-                <input
-                  type="password"
-                  className="input"
+                <div className="flex items-center justify-between mb-2">
+                  <label className="label mb-0">Password</label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <PasswordInput
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -157,7 +165,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? "Signing in..." : "Sign In"}
@@ -215,21 +223,15 @@ export default function LoginPage() {
                 />
               </div>
 
-              <div>
-                <label className="label">Password</label>
-                <input
-                  type="password"
-                  className="input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  placeholder="••••••••"
-                />
-                <p className="text-xs text-secondary-500 mt-1">
-                  Min 8 characters, with uppercase, lowercase, and number
-                </p>
-              </div>
+              <PasswordInput
+                label="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                placeholder="••••••••"
+                hint="Min 8 characters, with uppercase, lowercase, and number"
+              />
 
               <button
                 type="submit"

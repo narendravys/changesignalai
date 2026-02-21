@@ -32,13 +32,13 @@ git clone <your-repo-url> scrapper-agent
 cd scrapper-agent
 ```
 
-### Step 1.2 – Create environment file
+### Step 1.2 – Create environment file (single file for all services)
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and set at least:
+Edit the root `.env` and set at least:
 
 | Variable | Required | Notes |
 |----------|----------|--------|
@@ -187,7 +187,7 @@ ALLOWED_ORIGINS=https://yourdomain.com,https://api.yourdomain.com
 | Service        | Port (host) | Purpose                    |
 |----------------|-------------|----------------------------|
 | Frontend       | 3000        | Next.js app                |
-| Backend API    | 8001        | FastAPI (internal: 8000)   |
+| Backend API    | 8000        | FastAPI (internal: 8000)   |
 | PostgreSQL     | 5433        | Database (internal: 5432)  |
 | Redis          | 6380        | Cache/queue (internal: 6379) |
 
@@ -199,7 +199,7 @@ Ensure these ports are free or change them in `docker-compose.yml` (and `docker-
 
 ### 4.1 – “Cannot reach the API” on the frontend
 
-- Backend must be up and healthy. Check: `curl http://localhost:8001/health`
+- Backend must be up and healthy. Check: `curl http://localhost:8000/health`
 - If you’re not on the same host (e.g. phone), use the host’s IP or hostname and set `NEXT_PUBLIC_API_URL` (and rebuild frontend if production build).
 - CORS: ensure `ALLOWED_ORIGINS` in `.env` includes the origin you use to open the app (e.g. `http://127.0.0.1:3000`).
 

@@ -16,8 +16,8 @@ from app.core.database import get_db
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# HTTP Bearer token scheme
-security = HTTPBearer()
+# HTTP Bearer token scheme (auto_error=False so we can return 401 instead of 403 when missing)
+security = HTTPBearer(auto_error=False)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -34,6 +34,12 @@ def get_password_hash(password: str) -> str:
     password_bytes = password.encode('utf-8')[:72]
     password_truncated = password_bytes.decode('utf-8', errors='ignore')
     return pwd_context.hash(password_truncated)
+
+
+def create_password_reset_token() -> str:
+    """Create a secure random token for password reset (URL-safe, 32 bytes)."""
+    import secrets
+    return secrets.token_urlsafe(32)
 
 
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
@@ -85,17 +91,19 @@ def decode_access_token(token: str) -> Dict[str, Any]:
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db)
 ):
     """
-    Dependency to get current authenticated user
-    
-    Usage:
-        @app.get("/protected")
-        def protected_route(current_user = Depends(get_current_user)):
-            return {"user_id": current_user.id}
+    Dependency to get current authenticated user.
+    Returns 401 (not 403) when Authorization header is missing so clients can redirect to login.
     """
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     token = credentials.credentials
     payload = decode_access_token(token)
     

@@ -71,7 +71,9 @@ export default function MonitoringPage() {
       setCompetitors(competitorsData);
     } catch (error: any) {
       console.error("Failed to load data:", error);
-      setLoadError(formatApiError(error, "Failed to load data. Please refresh the page."));
+      const status = error.response?.status;
+      const fallback = status ? `Request failed (${status}). Please refresh the page.` : "Failed to load data. Please refresh the page.";
+      setLoadError(formatApiError(error, fallback));
     } finally {
       setLoading(false);
     }
@@ -205,54 +207,54 @@ export default function MonitoringPage() {
 
           {/* Stats Cards */}
           <div className="grid md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-xl p-4 border-2 border-gray-100">
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border-2 border-gray-100 dark:border-slate-700">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">Total Pages</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{pages.length}</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400 font-medium">Total Pages</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{pages.length}</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <FiClock className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                  <FiClock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-4 border-2 border-gray-100">
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border-2 border-gray-100 dark:border-slate-700">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">Active</p>
-                  <p className="text-2xl font-bold text-green-600 mt-1">
+                  <p className="text-sm text-gray-600 dark:text-slate-400 font-medium">Active</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
                     {pages.filter(p => p.is_active).length}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                  <FiCheckCircle className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                  <FiCheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-4 border-2 border-gray-100">
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border-2 border-gray-100 dark:border-slate-700">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">Hourly Checks</p>
-                  <p className="text-2xl font-bold text-purple-600 mt-1">
+                  <p className="text-sm text-gray-600 dark:text-slate-400 font-medium">Hourly Checks</p>
+                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">
                     {pages.filter(p => p.check_frequency === 'hourly').length}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                  <FiRefreshCw className="w-6 h-6 text-purple-600" />
+                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                  <FiRefreshCw className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-4 border-2 border-gray-100">
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border-2 border-gray-100 dark:border-slate-700">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">Competitors</p>
-                  <p className="text-2xl font-bold text-indigo-600 mt-1">{competitors.length}</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400 font-medium">Competitors</p>
+                  <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">{competitors.length}</p>
                 </div>
-                <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
-                  <FiExternalLink className="w-6 h-6 text-indigo-600" />
+                <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
+                  <FiExternalLink className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                 </div>
               </div>
             </div>
@@ -260,12 +262,12 @@ export default function MonitoringPage() {
 
           {/* Empty States */}
           {competitors.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <FiAlertCircle className="w-8 h-8 text-blue-600" />
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-12 text-center">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <FiAlertCircle className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Add Competitors First</h3>
-              <p className="text-gray-600 mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Add Competitors First</h3>
+              <p className="text-gray-600 dark:text-slate-400 mb-6">
                 You need to add competitors before you can monitor their pages.
               </p>
               <a 
@@ -276,12 +278,12 @@ export default function MonitoringPage() {
               </a>
             </div>
           ) : pages.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <FiClock className="w-8 h-8 text-green-600" />
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-12 text-center">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <FiClock className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Start Monitoring</h3>
-              <p className="text-gray-600 mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Start Monitoring</h3>
+              <p className="text-gray-600 dark:text-slate-400 mb-6">
                 Add your first page to start tracking competitor changes.
               </p>
               <button
@@ -294,16 +296,16 @@ export default function MonitoringPage() {
           ) : (
             <>
               {/* Search and Filters */}
-              <div className="bg-white rounded-xl border-2 border-gray-100 p-4">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-gray-100 dark:border-slate-700 p-4">
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="flex-1 relative">
-                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 w-5 h-5" />
                     <input
                       type="text"
                       placeholder="Search pages, titles, or competitors..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors bg-white text-gray-900 placeholder:text-gray-400"
+                      className="w-full pl-10 pr-4 py-2 border-2 border-gray-200 dark:border-slate-600 rounded-lg focus:border-blue-500 focus:outline-none transition-colors bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
                     />
                   </div>
                   <div className="flex gap-2">
@@ -312,7 +314,7 @@ export default function MonitoringPage() {
                       className={`px-4 py-2 rounded-lg font-medium transition-all ${
                         filterStatus === "all"
                           ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          : "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600"
                       }`}
                     >
                       All
@@ -322,7 +324,7 @@ export default function MonitoringPage() {
                       className={`px-4 py-2 rounded-lg font-medium transition-all ${
                         filterStatus === "active"
                           ? "bg-green-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          : "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600"
                       }`}
                     >
                       Active
@@ -332,7 +334,7 @@ export default function MonitoringPage() {
                       className={`px-4 py-2 rounded-lg font-medium transition-all ${
                         filterStatus === "inactive"
                           ? "bg-gray-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          : "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600"
                       }`}
                     >
                       Inactive
@@ -342,40 +344,28 @@ export default function MonitoringPage() {
               </div>
 
               {/* Pages List */}
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-700 border-b-2 border-gray-200 dark:border-slate-600">
                       <tr>
-                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 dark:text-slate-200">
                           Page
                         </th>
-                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                          Competitor
-                        </th>
-                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                          Type
-                        </th>
-                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                          Frequency
-                        </th>
-                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                          Last Checked
-                        </th>
-                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                          Status
-                        </th>
-                        <th className="text-right py-4 px-6 text-sm font-bold text-gray-700">
-                          Actions
-                        </th>
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 dark:text-slate-200">Competitor</th>
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 dark:text-slate-200">Type</th>
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 dark:text-slate-200">Frequency</th>
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 dark:text-slate-200">Last Checked</th>
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 dark:text-slate-200">Status</th>
+                        <th className="text-right py-4 px-6 text-sm font-bold text-gray-700 dark:text-slate-200">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredPages.map((page, index) => (
                         <tr 
                           key={page.id} 
-                          className={`border-b border-gray-100 hover:bg-blue-50 transition-colors ${
-                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                          className={`border-b border-gray-100 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700/50 transition-colors ${
+                            index % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-gray-50/50 dark:bg-slate-800/80'
                           }`}
                         >
                           <td className="py-4 px-6">
@@ -383,7 +373,7 @@ export default function MonitoringPage() {
                               href={page.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium group max-w-xs"
+                              className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium group max-w-xs"
                               title={page.url}
                             >
                               <span className="truncate">{page.page_title || page.url}</span>
@@ -391,12 +381,12 @@ export default function MonitoringPage() {
                             </a>
                           </td>
                           <td className="py-4 px-6">
-                            <span className="text-sm font-medium text-gray-700">
+                            <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
                               {page.competitor_name}
                             </span>
                           </td>
                           <td className="py-4 px-6">
-                            <span className="px-3 py-1 text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                            <span className="px-3 py-1 text-xs font-bold rounded-full bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-600">
                               {page.page_type || "general"}
                             </span>
                           </td>
@@ -406,8 +396,8 @@ export default function MonitoringPage() {
                             </span>
                           </td>
                           <td className="py-4 px-6">
-                            <div className="flex items-center text-sm text-gray-600">
-                              <FiClock className="w-4 h-4 mr-2 text-gray-400" />
+                            <div className="flex items-center text-sm text-gray-600 dark:text-slate-400">
+                              <FiClock className="w-4 h-4 mr-2 text-gray-400 dark:text-slate-500" />
                               {page.last_checked_at
                                 ? format(new Date(page.last_checked_at), "MMM d, h:mm a")
                                 : "Never"}
@@ -417,8 +407,8 @@ export default function MonitoringPage() {
                             <span
                               className={`px-3 py-1 text-xs font-bold rounded-full border-2 ${
                                 page.is_active
-                                  ? "bg-green-50 text-green-700 border-green-200"
-                                  : "bg-gray-50 text-gray-600 border-gray-200"
+                                  ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700"
+                                  : "bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-slate-400 border-gray-200 dark:border-slate-600"
                               }`}
                             >
                               {page.is_active ? "● Active" : "○ Inactive"}
@@ -428,14 +418,14 @@ export default function MonitoringPage() {
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => handleCheckNow(page.id, page.url)}
-                                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                className="p-2 text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
                                 title="Check now"
                               >
                                 <FiRefreshCw className="w-5 h-5" />
                               </button>
                               <button
                                 onClick={() => handleDelete(page.id)}
-                                className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                className="p-2 text-gray-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
                                 title="Delete"
                               >
                                 <FiTrash2 className="w-5 h-5" />
@@ -450,7 +440,7 @@ export default function MonitoringPage() {
                 
                 {filteredPages.length === 0 && (
                   <div className="text-center py-12">
-                    <p className="text-gray-500">No pages match your filters</p>
+                    <p className="text-gray-500 dark:text-slate-400">No pages match your filters</p>
                   </div>
                 )}
               </div>
@@ -461,16 +451,16 @@ export default function MonitoringPage() {
         {/* Add Page Modal */}
         {showAddModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-            <div className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-8 shadow-2xl border border-gray-200 dark:border-slate-700">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent mb-6">
                 Add Monitored Page
               </h2>
               <form onSubmit={handleAddPage} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Page URL *</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">Page URL *</label>
                   <input
                     type="url"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     required
@@ -479,9 +469,9 @@ export default function MonitoringPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Competitor *</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">Competitor *</label>
                   <select
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white text-gray-900"
+                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                     value={competitorId}
                     onChange={(e) => setCompetitorId(e.target.value === "" ? "" : Number(e.target.value))}
                     required
@@ -496,10 +486,10 @@ export default function MonitoringPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Page Type</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">Page Type</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
                     value={pageType}
                     onChange={(e) => setPageType(e.target.value)}
                     placeholder="e.g., pricing, features, terms"
@@ -507,9 +497,9 @@ export default function MonitoringPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Check Frequency</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">Check Frequency</label>
                   <select
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white text-gray-900"
+                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                     value={checkFrequency}
                     onChange={(e) => setCheckFrequency(e.target.value as any)}
                   >
@@ -520,9 +510,9 @@ export default function MonitoringPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Notes (Optional)</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">Notes (Optional)</label>
                   <textarea
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors resize-none bg-white text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 rounded-xl focus:border-blue-500 focus:outline-none transition-colors resize-none bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={2}
@@ -537,7 +527,7 @@ export default function MonitoringPage() {
                       setShowAddModal(false);
                       resetForm();
                     }}
-                    className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all"
+                    className="flex-1 px-6 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-all"
                   >
                     Cancel
                   </button>

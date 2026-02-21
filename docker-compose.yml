@@ -50,7 +50,7 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     ports:
-      - "8001:8000"
+      - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -116,18 +116,21 @@ services:
       - changesignal-network
     command: celery -A app.workers.celery_app beat --loglevel=info
 
-  # Frontend (Next.js) – production build + start (same as local: npm run build && npm start)
+  # Frontend (Next.js) – production build + start; uses same root .env for build args
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
+        # Browser must reach API from your machine; use localhost when opening app at localhost:3000
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
         NEXT_PUBLIC_API_VERSION: ${NEXT_PUBLIC_API_VERSION:-v1}
     image: changesignal-frontend:latest
     container_name: changesignal-frontend
     restart: unless-stopped
     mem_limit: 512m
+    env_file:
+      - ./.env
     environment:
       - NODE_ENV=production
       - PORT=3000

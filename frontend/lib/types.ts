@@ -75,6 +75,7 @@ export interface ChangeEvent {
   severity_score: number;
   business_impact: string;
   recommended_action: string;
+  human_readable_comparison?: string;
   diff_preview?: string;
   llm_response?: any;
   acknowledged: boolean;

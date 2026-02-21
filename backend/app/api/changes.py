@@ -54,7 +54,7 @@ async def list_change_events(
         query = query.filter(ChangeEvent.change_detected == True)
     
     # Apply filters
-    if severity:
+    if severity is not None:
         query = query.filter(ChangeEvent.severity == severity)
     
     if change_type:

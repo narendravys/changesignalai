@@ -140,14 +140,14 @@ function SubscriptionPageContent() {
       <Layout>
         <div className="space-y-6 max-w-3xl">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Subscription & Billing</h1>
-            <p className="text-slate-600 mt-1">Manage your plan, trial, and billing</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Subscription & Billing</h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-1">Manage your plan, trial, and billing</p>
           </div>
 
           {/* Current Status Card */}
           <div
             className={`rounded-xl border p-6 sm:p-8 ${
-              access ? "bg-emerald-50/80 border-emerald-200" : "bg-slate-50 border-slate-200"
+              access ? "bg-emerald-50/80 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700" : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
             }`}
           >
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -158,14 +158,14 @@ function SubscriptionPageContent() {
                       <FiCheck className="w-7 h-7 text-white" />
                     </div>
                   ) : (
-                    <div className="w-12 h-12 bg-slate-400 rounded-full flex items-center justify-center">
+                    <div className="w-12 h-12 bg-slate-400 dark:bg-slate-600 rounded-full flex items-center justify-center">
                       <FiX className="w-7 h-7 text-white" />
                     </div>
                   )}
                   <div>
-                    <h2 className="text-xl font-semibold text-slate-900">{statusTitle}</h2>
-                    <p className="text-slate-600 text-sm mt-0.5">
-                      Status: <span className={`font-medium ${access ? "text-emerald-600" : "text-slate-700"}`}>
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white">{statusTitle}</h2>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mt-0.5">
+                      Status: <span className={`font-medium ${access ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300"}`}>
                         {state.replace("_", " ")}
                       </span>
                     </p>
@@ -175,8 +175,8 @@ function SubscriptionPageContent() {
                 <div className="space-y-2">
                   {(state === "trial" || state === "trial_ending_soon") && subscriptionStatus?.trial_ends_at && (
                     <div className="flex items-center gap-2">
-                      <FiClock className="w-5 h-5 text-slate-500 flex-shrink-0" />
-                      <p className="text-slate-700 text-sm">
+                      <FiClock className="w-5 h-5 text-slate-500 dark:text-slate-400 flex-shrink-0" />
+                      <p className="text-slate-700 dark:text-slate-300 text-sm">
                         Trial ends on <strong>{trialEndDateFormatted}</strong>
                         {subscriptionStatus.days_remaining != null && (
                           <span className="ml-1">
@@ -188,16 +188,16 @@ function SubscriptionPageContent() {
                   )}
                   {state === "active" && subscriptionStatus?.subscription_ends_at && (
                     <div className="flex items-center gap-2">
-                      <FiClock className="w-5 h-5 text-slate-500 flex-shrink-0" />
-                      <p className="text-slate-700 text-sm">
+                      <FiClock className="w-5 h-5 text-slate-500 dark:text-slate-400 flex-shrink-0" />
+                      <p className="text-slate-700 dark:text-slate-300 text-sm">
                         Renews {formatDistanceToNow(new Date(subscriptionStatus.subscription_ends_at!), { addSuffix: true })}
                       </p>
                     </div>
                   )}
                   {(state === "trial_expired" || state === "expired" || state === "cancelled") && (
                     <div className="flex items-center gap-2">
-                      <FiAlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                      <p className="text-slate-700 font-medium text-sm">
+                      <FiAlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                      <p className="text-slate-700 dark:text-slate-300 font-medium text-sm">
                         {state === "cancelled"
                           ? "Reactivate below to restore access."
                           : "Upgrade or renew below to continue using ChangeSignal AI."}
@@ -232,69 +232,89 @@ function SubscriptionPageContent() {
 
           {/* Steps to renew – when user has no access */}
           {!access && (
-            <div className="rounded-xl border border-slate-200 bg-white p-6">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">How to renew or upgrade</h3>
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">How to renew or upgrade</h3>
               <ol className="space-y-3">
                 {RENEW_STEPS.map(({ step, label }) => (
                   <li key={step} className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
+                    <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-300">
                       {step}
                     </span>
-                    <span className="text-slate-700 text-sm">{label}</span>
+                    <span className="text-slate-700 dark:text-slate-300 text-sm">{label}</span>
                   </li>
                 ))}
               </ol>
-              <p className="mt-4 text-sm text-slate-600">
+              <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">
                 Use the <strong>Upgrade Now</strong> or <strong>Reactivate</strong> button above to continue.
               </p>
             </div>
           )}
 
-          {/* Pricing Card */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Pro Plan</h3>
-            <div className="flex items-baseline gap-1 mb-6">
-              <span className="text-3xl font-bold text-slate-900">${subscriptionStatus?.monthly_price ?? 0}</span>
-              <span className="text-slate-600">/month</span>
+          {/* Plans – same as landing page */}
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Plans</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="rounded-xl border-2 border-slate-200 dark:border-slate-700 p-6 bg-white dark:bg-slate-800">
+                <h4 className="font-bold text-slate-900 dark:text-white mb-1">Free Trial</h4>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white mb-3">$0</p>
+                <ul className="space-y-2 text-slate-600 dark:text-slate-400 text-sm">
+                  <li className="flex items-center gap-2">✓ Full access to monitoring & changes</li>
+                  <li className="flex items-center gap-2">✓ AI analysis & alerts</li>
+                  <li className="flex items-center gap-2">✓ Export to CSV & reports</li>
+                  <li className="flex items-center gap-2">✓ No credit card required</li>
+                </ul>
+                {(state === "trial" || state === "trial_ending_soon") && (
+                  <p className="mt-3 text-xs font-semibold text-blue-600 dark:text-blue-400">Your current plan</p>
+                )}
+              </div>
+              <div className="rounded-xl border-2 border-blue-500 dark:border-blue-400 p-6 bg-gradient-to-br from-blue-50 to-indigo-50/50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                <h4 className="font-bold text-slate-900 dark:text-white mb-1">Pro Plan</h4>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
+                  ${subscriptionStatus?.monthly_price ?? 0}<span className="text-base font-normal text-slate-600 dark:text-slate-400">/month</span>
+                </p>
+                <ul className="space-y-2 text-slate-600 dark:text-slate-400 text-sm">
+                  <li className="flex items-center gap-2">✓ Everything in Trial</li>
+                  <li className="flex items-center gap-2">✓ More competitors & pages</li>
+                  <li className="flex items-center gap-2">✓ Priority support</li>
+                  <li className="flex items-center gap-2">✓ Team & enterprise options</li>
+                </ul>
+                {state === "active" && (
+                  <p className="mt-3 text-xs font-semibold text-blue-600 dark:text-blue-400">Your current plan</p>
+                )}
+              </div>
             </div>
-            <ul className="space-y-3 mb-6">
-              {[
-                "Unlimited competitor monitoring",
-                "AI-powered change detection & analysis",
-                "Real-time alerts via email & webhooks",
-                "Advanced analytics & insights",
-                "Full screenshot history",
-                "Priority support",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-3">
-                  <FiCheck className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-slate-700 text-sm">{item}</span>
-                </li>
-              ))}
-            </ul>
-            {state === "active" && (
+          </div>
+
+          {/* Pro Plan billing (when active) */}
+          {state === "active" && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 sm:p-8">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Pro Plan — Billing</h3>
+              <div className="flex items-baseline gap-1 mb-6">
+                <span className="text-3xl font-bold text-slate-900 dark:text-white">${subscriptionStatus?.monthly_price ?? 0}</span>
+                <span className="text-slate-600 dark:text-slate-400">/month</span>
+              </div>
               <button
                 onClick={handleCancel}
                 disabled={processing}
-                className="w-full px-4 py-2.5 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 font-medium text-sm disabled:opacity-50 transition-colors"
+                className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 font-medium text-sm disabled:opacity-50 transition-colors"
               >
                 {processing ? "Processing..." : "Cancel Subscription"}
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Help */}
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-5">
+          <div className="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
             <div className="flex items-start gap-4">
-              <FiCreditCard className="w-6 h-6 text-slate-500 flex-shrink-0 mt-0.5" />
+              <FiCreditCard className="w-6 h-6 text-slate-500 dark:text-slate-400 flex-shrink-0 mt-0.5" />
               <div>
-                <h4 className="font-semibold text-slate-900 text-sm">Need help?</h4>
-                <p className="text-slate-600 text-sm mt-1">
+                <h4 className="font-semibold text-slate-900 dark:text-white text-sm">Need help?</h4>
+                <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
                   Questions about billing or your plan? We're here to help.
                 </p>
                 <a
                   href="mailto:support@changesignal.ai"
-                  className="text-blue-600 hover:underline text-sm font-medium mt-2 inline-block"
+                  className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium mt-2 inline-block"
                 >
                   Contact support →
                 </a>

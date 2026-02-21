@@ -13,19 +13,38 @@ import {
 
 const SESSION_MODAL_KEY = "changesignal_subscription_modal_shown";
 
-export default function SubscriptionBanner() {
-  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatusFromApi | null>(null);
+interface SubscriptionBannerProps {
+  /** When provided (e.g. from Layout), no separate API call is made. */
+  subscriptionStatus?: SubscriptionStatusFromApi | null;
+}
+
+export default function SubscriptionBanner({ subscriptionStatus: statusFromParent }: SubscriptionBannerProps) {
+  const [selfStatus, setSelfStatus] = useState<SubscriptionStatusFromApi | null>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const subscriptionStatus = statusFromParent ?? selfStatus;
 
   useEffect(() => {
-    loadSubscriptionStatus();
-  }, []);
-
-  const loadSubscriptionStatus = async () => {
-    try {
-      const status = await api.getSubscriptionStatus();
-      setSubscriptionStatus(status);
+    if (statusFromParent !== undefined) {
+      const state = getSubscriptionDisplayState(statusFromParent);
+      if (shouldShowSubscriptionBanner(state)) {
+        setShowBanner(true);
+        try {
+          const alreadyShown = sessionStorage.getItem(SESSION_MODAL_KEY);
+          if (!alreadyShown) {
+            setShowModal(true);
+            sessionStorage.setItem(SESSION_MODAL_KEY, "1");
+          }
+        } catch {
+          setShowModal(true);
+        }
+      }
+      return;
+    }
+    let mounted = true;
+    api.getSubscriptionStatus().then((status) => {
+      if (!mounted) return;
+      setSelfStatus(status);
       const state = getSubscriptionDisplayState(status);
       if (shouldShowSubscriptionBanner(state)) {
         setShowBanner(true);
@@ -39,10 +58,9 @@ export default function SubscriptionBanner() {
           setShowModal(true);
         }
       }
-    } catch {
-      // ignore
-    }
-  };
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, [statusFromParent]);
 
   const openModal = () => setShowModal(true);
   const closeModal = () => setShowModal(false);

@@ -87,11 +87,11 @@ class AlertService:
     ) -> Optional[Alert]:
         """Create and send a Slack alert"""
         
-        # Create alert record
+        # Create alert record (pass string so PostgreSQL receives 'slack' not enum name 'SLACK')
         alert = Alert(
             change_event_id=change_event.id,
-            channel=AlertChannel.SLACK,
-            status=AlertStatus.PENDING,
+            channel="slack",
+            status="pending",
             message=message_data["slack_message"],
         )
         self.db.add(alert)
@@ -114,14 +114,14 @@ class AlertService:
     ) -> Optional[Alert]:
         """Create and send an email alert"""
         
-        # Create alert record
+        # Create alert record (pass string so PostgreSQL receives lowercase enum values)
         alert = Alert(
             change_event_id=change_event.id,
-            channel=AlertChannel.EMAIL,
+            channel="email",
             recipient=recipient,
             subject=message_data["email_subject"],
             message=message_data["email_body"],
-            status=AlertStatus.PENDING,
+            status="pending",
         )
         self.db.add(alert)
         self.db.commit()

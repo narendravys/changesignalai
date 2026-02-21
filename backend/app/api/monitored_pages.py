@@ -3,7 +3,7 @@ Monitored Pages API routes
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app.core.database import get_db
 from app.core.security import get_current_user_with_subscription
@@ -27,8 +27,8 @@ logger = get_logger(__name__)
 async def list_monitored_pages(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
-    competitor_id: int = None,
-    is_active: bool = None,
+    competitor_id: Optional[int] = None,
+    is_active: Optional[bool] = None,
     current_user: User = Depends(get_current_user_with_subscription),
     db: Session = Depends(get_db)
 ):

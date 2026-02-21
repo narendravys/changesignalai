@@ -3,7 +3,7 @@
  */
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION || "v1";
 
 /** Base URL used for API requests (for error messages / debugging). */
@@ -54,8 +54,8 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          // Unauthorized - clear token and redirect to login
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          // Unauthorized or Forbidden (missing/invalid token) - clear token and redirect to login
           this.clearToken();
           if (typeof window !== "undefined") {
             window.location.href = "/login";
@@ -133,6 +133,16 @@ class ApiClient {
         localStorage.setItem("user", JSON.stringify(response.data.user));
       }
     }
+    return response.data;
+  }
+
+  async requestPasswordReset(email: string) {
+    const response = await this.client.post("/auth/forgot-password", { email });
+    return response.data;
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const response = await this.client.post("/auth/reset-password", { token, new_password: newPassword });
     return response.data;
   }
 

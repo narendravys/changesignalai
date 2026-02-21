@@ -1,6 +1,7 @@
 """
 Database configuration and session management
 """
+import logging
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -8,13 +9,16 @@ from typing import Generator
 
 from app.core.config import settings
 
-# Create SQLAlchemy engine
+# Do not log every SQL query; only WARNING and above from SQLAlchemy engine
+logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+
+# Create SQLAlchemy engine (echo=False: do not log every SQL query; set SQL_ECHO=1 to debug)
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
-    echo=settings.DEBUG,
+    echo=False,
 )
 
 # Create SessionLocal class

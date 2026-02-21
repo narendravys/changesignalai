@@ -4,6 +4,8 @@
 
 ChangeSignal AI is a production-ready SaaS MVP that monitors competitor websites, detects semantic (meaning-based) changes, classifies severity, explains business impact, and suggests recommended actions using LLM-powered analysis.
 
+**Investor demo:** See [INVESTOR_DEMO.md](./INVESTOR_DEMO.md) for a demo checklist, suggested script, and tips for funding conversations.
+
 ## 🎯 Key Features
 
 - **Autonomous Monitoring**: Automatically check competitor websites on scheduled intervals
@@ -63,7 +65,7 @@ scrapper-agent/
 │   └── Dockerfile
 │
 ├── docker-compose.yml     # Docker orchestration
-├── .env.example          # Environment template
+├── .env.example          # Single env template (copy to .env; used by backend, frontend, Docker)
 └── README.md             # This file
 ```
 
@@ -89,7 +91,7 @@ cd scrapper-agent
 # Copy the example environment file
 cp .env.example .env
 
-# Edit .env and set your values (at minimum, set these):
+# One .env at project root is used by backend, frontend, and Docker. Edit and set (at minimum):
 # - SECRET_KEY (generate a secure 32+ character string)
 # - OPENAI_API_KEY (your OpenAI API key)
 # - SLACK_WEBHOOK_URL (optional)

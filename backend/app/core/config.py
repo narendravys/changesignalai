@@ -69,9 +69,13 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
     
+    # Frontend (for password reset links, etc.)
+    FRONTEND_URL: str = "http://localhost:3000"
+
     # Security (include both localhost and 127.0.0.1 so CORS works either way)
-    ALLOWED_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8001,http://127.0.0.1:8001"
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000"
     RATE_LIMIT_PER_MINUTE: int = 60
+    PASSWORD_RESET_EXPIRE_MINUTES: int = 60
     
     def get_allowed_origins(self) -> List[str]:
         """Parse and return allowed origins as a list"""
@@ -80,7 +84,8 @@ class Settings(BaseSettings):
         return self.ALLOWED_ORIGINS
     
     class Config:
-        env_file = ".env"
+        # Single .env at project root (try parent first for local runs from backend/)
+        env_file = ("../.env", ".env")
         case_sensitive = True
 
 

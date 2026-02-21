@@ -196,6 +196,34 @@ class EmailService:
         </html>
         """
     
+    def send_password_reset_email(self, to_email: str, reset_url: str):
+        """Send password reset link email."""
+        if not self.enabled:
+            print(f"Email not configured, skipping password reset for {to_email}")
+            return
+        subject = "ChangeSignal AI – Reset your password"
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+        <body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f1f5f9;">
+            <div style="max-width:480px;margin:0 auto;padding:24px;">
+                <div style="background:linear-gradient(135deg,#2563eb 0%,#4f46e5 100%);padding:24px;border-radius:12px 12px 0 0;text-align:center;">
+                    <h1 style="color:#fff;margin:0;font-size:22px;">Reset your password</h1>
+                </div>
+                <div style="background:#fff;padding:24px;border-radius:0 0 12px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+                    <p style="margin:0 0 16px;color:#334155;">You requested a password reset for your ChangeSignal AI account.</p>
+                    <p style="margin:0 0 20px;color:#334155;">Click the button below to set a new password. This link expires in 1 hour.</p>
+                    <a href="{reset_url}" style="display:inline-block;background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:600;">Reset password</a>
+                    <p style="margin:20px 0 0;font-size:12px;color:#64748b;">If you didn't request this, you can ignore this email.</p>
+                </div>
+                <p style="text-align:center;margin-top:20px;font-size:12px;color:#94a3b8;">ChangeSignal AI – Competitive Intelligence</p>
+            </div>
+        </body>
+        </html>
+        """
+        self._send_email(to_email=to_email, subject=subject, html_body=html_body)
+
     def _send_email(self, to_email: str, subject: str, html_body: str):
         """Send email via SMTP"""
         try:

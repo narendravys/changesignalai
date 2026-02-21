@@ -39,6 +39,7 @@ class ChangeEventResponse(ChangeEventBase):
     snapshot_id: int
     severity_score: int
     diff_preview: Optional[str] = None
+    human_readable_comparison: Optional[str] = None
     acknowledged: bool
     acknowledged_at: Optional[datetime] = None
     created_at: datetime

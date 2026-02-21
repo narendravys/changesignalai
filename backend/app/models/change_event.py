@@ -38,15 +38,15 @@ class ChangeEvent(Base):
     change_detected = Column(Boolean, default=False, nullable=False)
     summary = Column(Text, nullable=True)
     
-    # Classification
+    # Classification (values_callable so PostgreSQL gets 'low'/'pricing' not 'LOW'/'PRICING')
     change_type = Column(
-        SQLEnum(ChangeType, name="change_type_enum"),
+        SQLEnum(ChangeType, name="change_type_enum", values_callable=lambda x: [e.value for e in x]),
         default=ChangeType.OTHER,
         nullable=False,
         index=True
     )
     severity = Column(
-        SQLEnum(Severity, name="severity_enum"),
+        SQLEnum(Severity, name="severity_enum", values_callable=lambda x: [e.value for e in x]),
         default=Severity.LOW,
         nullable=False,
         index=True
@@ -68,6 +68,7 @@ class ChangeEvent(Base):
     
     # Additional metadata
     diff_preview = Column(Text, nullable=True)  # Short preview of changes
+    human_readable_comparison = Column(Text, nullable=True)  # In-depth human narrative of what changed
     
     # Relationships
     monitored_page_id = Column(Integer, ForeignKey("monitored_pages.id", ondelete="CASCADE"), nullable=False, index=True)

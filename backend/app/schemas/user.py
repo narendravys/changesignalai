@@ -43,6 +43,17 @@ class UserLogin(BaseModel):
     password: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    """Schema for forgot password request"""
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """Schema for reset password (with token)"""
+    token: str
+    new_password: str = Field(min_length=8, description="New password, min 8 characters")
+
+
 class UserResponse(UserBase):
     """Schema for user response"""
     id: int

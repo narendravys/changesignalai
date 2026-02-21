@@ -1,8 +1,10 @@
 """
 Celery application configuration
 """
+import logging
 from celery import Celery
 from celery.schedules import crontab
+from celery.signals import worker_process_init
 
 from app.core.config import settings
 
@@ -45,6 +47,12 @@ celery_app.conf.beat_schedule = {
         "schedule": crontab(hour=2, minute=0),  # Daily at 2 AM
     },
 }
+
+@worker_process_init.connect
+def _suppress_sqlalchemy_sql_logs(**kwargs):
+    """Do not log every SQL query in worker processes; only WARNING+."""
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+
 
 if __name__ == "__main__":
     celery_app.start()

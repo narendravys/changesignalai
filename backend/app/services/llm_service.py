@@ -96,8 +96,112 @@ class LLMService:
                 "change_type": "other",
                 "severity": "low",
                 "business_impact": "Unable to analyze due to error",
-                "recommended_action": "Review manually"
+                "recommended_action": "Review manually",
+                "human_readable_comparison": "",
             }
+
+    async def analyze_changes_in_depth(
+        self,
+        previous_content: str,
+        current_content: str,
+        page_url: str,
+        page_title: Optional[str] = None,
+        page_type: Optional[str] = None,
+        initial_summary: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Professional in-depth analysis for business use: human-readable comparison,
+        business impact, and recommended actions. Use when hybrid/Groq output is
+        insufficient or when you need reliable, robust analysis.
+        """
+        try:
+            max_content_length = 12000
+            previous_truncated = self._truncate_content(previous_content, max_content_length)
+            current_truncated = self._truncate_content(current_content, max_content_length)
+
+            system_prompt = (
+                "You are an expert competitive intelligence analyst. Your output is used by "
+                "business teams to make decisions. Be accurate, specific, and professional. "
+                "Base all conclusions only on the provided content. Do not hallucinate. "
+                "Provide a clear, in-depth human narrative of what changed and what to do."
+            )
+            page_ctx = f"\nPage title: {page_title}" if page_title else ""
+            if page_type:
+                page_ctx += f"\nPage type: {page_type}"
+            if initial_summary:
+                page_ctx += f"\nInitial change summary (from automated check): {initial_summary}"
+
+            user_prompt = f"""Analyze the differences between these two versions of a competitor page.
+
+URL: {page_url}{page_ctx}
+
+PREVIOUS VERSION (cleaned text):
+{previous_truncated}
+
+CURRENT VERSION (cleaned text):
+{current_truncated}
+
+Provide:
+1. **human_readable_comparison**: A clear, in-depth narrative (2–4 paragraphs) explaining exactly what changed in plain language. Describe what was there before, what is there now, and how the changes fit together. Write for a business reader who did not see the raw diff. Do not output raw diff or code; use professional prose.
+2. **business_impact**: How this change affects our business, positioning, or strategy. Be specific and actionable.
+3. **recommended_action**: Concrete next steps we should take (e.g. update our pricing, review messaging, contact legal). One short paragraph.
+4. **summary**: One concise sentence summarizing the change (for headlines).
+5. **change_type**: One of: pricing, features, policy, content, layout, other
+6. **severity**: One of: low, medium, high, critical
+7. **change_detected**: true
+
+Respond ONLY with valid JSON in this exact format (no markdown, no code block):
+{{
+    "change_detected": true,
+    "summary": "One sentence summary",
+    "human_readable_comparison": "Full narrative of what changed in human-readable form...",
+    "business_impact": "How this affects our business...",
+    "recommended_action": "What we should do...",
+    "change_type": "pricing|features|policy|content|layout|other",
+    "severity": "low|medium|high|critical"
+}}"""
+
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.2,
+                response_format={"type": "json_object"},
+            )
+            raw = json.loads(response.choices[0].message.content)
+            normalized = self._normalize_in_depth_response(raw)
+            logger.info(
+                "LLM in-depth analysis complete: severity=%s, has_comparison=%s",
+                normalized.get("severity"),
+                bool(normalized.get("human_readable_comparison")),
+            )
+            return normalized
+        except Exception as e:
+            logger.error(f"Error in LLM in-depth analysis: {e}")
+            return {
+                "change_detected": True,
+                "summary": initial_summary or "Change detected",
+                "human_readable_comparison": "In-depth analysis could not be generated. Please review the diff preview and content manually.",
+                "business_impact": "Unable to generate automated impact analysis; recommend manual review.",
+                "recommended_action": "Review the page changes manually and assess impact.",
+                "change_type": "other",
+                "severity": "medium",
+            }
+
+    def _normalize_in_depth_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
+        valid_types = ["pricing", "features", "policy", "content", "layout", "other"]
+        valid_severities = ["low", "medium", "high", "critical"]
+        return {
+            "change_detected": bool(response.get("change_detected", True)),
+            "summary": str(response.get("summary", "")) or "Change detected",
+            "human_readable_comparison": str(response.get("human_readable_comparison", "")).strip(),
+            "business_impact": str(response.get("business_impact", "")).strip(),
+            "recommended_action": str(response.get("recommended_action", "")).strip(),
+            "change_type": response.get("change_type", "other") if response.get("change_type") in valid_types else "other",
+            "severity": response.get("severity", "medium") if response.get("severity") in valid_severities else "medium",
+        }
     
     def _build_analysis_prompt(
         self,
@@ -165,7 +269,8 @@ Be objective and focus on business implications. If no meaningful changes detect
             "change_type": response.get("change_type", "other"),
             "severity": response.get("severity", "low"),
             "business_impact": str(response.get("business_impact", "")),
-            "recommended_action": str(response.get("recommended_action", ""))
+            "recommended_action": str(response.get("recommended_action", "")),
+            "human_readable_comparison": str(response.get("human_readable_comparison", "")),
         }
         
         # Validate change_type

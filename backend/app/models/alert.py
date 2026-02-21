@@ -9,14 +9,14 @@ from app.core.database import Base
 
 
 class AlertChannel(str, Enum):
-    """Alert delivery channels"""
+    """Alert delivery channels (values must match PostgreSQL alert_channel_enum: lowercase)."""
     EMAIL = "email"
     SLACK = "slack"
     WEBHOOK = "webhook"
 
 
 class AlertStatus(str, Enum):
-    """Alert delivery status"""
+    """Alert delivery status (values must match PostgreSQL alert_status_enum: lowercase)."""
     PENDING = "pending"
     SENT = "sent"
     FAILED = "failed"
@@ -31,14 +31,14 @@ class Alert(Base):
     # Primary key
     id = Column(Integer, primary_key=True, index=True)
     
-    # Alert details
+    # Alert details (values_callable ensures PostgreSQL gets lowercase values)
     channel = Column(
-        SQLEnum(AlertChannel, name="alert_channel_enum"),
+        SQLEnum(AlertChannel, name="alert_channel_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True
     )
     status = Column(
-        SQLEnum(AlertStatus, name="alert_status_enum"),
+        SQLEnum(AlertStatus, name="alert_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=AlertStatus.PENDING,
         nullable=False,
         index=True

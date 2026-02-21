@@ -45,6 +45,3 @@ htmlcov/
 !README.md
 docs/
 
-# Docker
-docker-compose*.yml
-Dockerfile*

@@ -1,32 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import {
   getSubscriptionDisplayState,
   getSubscriptionBadgeLabel,
   hasAccess,
+  type SubscriptionStatusFromApi,
 } from "@/lib/subscription";
+import { useState, useEffect } from "react";
 
-export default function SubscriptionStatusBadge() {
-  const [state, setState] = useState<ReturnType<typeof getSubscriptionDisplayState> | null>(null);
+interface SubscriptionStatusBadgeProps {
+  /** When provided (e.g. from Layout), no separate API call is made. */
+  subscriptionStatus?: SubscriptionStatusFromApi | null;
+}
+
+export default function SubscriptionStatusBadge({ subscriptionStatus: statusFromParent }: SubscriptionStatusBadgeProps) {
+  const [selfStatus, setSelfStatus] = useState<SubscriptionStatusFromApi | null>(null);
+  const status = statusFromParent ?? selfStatus;
 
   useEffect(() => {
+    if (statusFromParent !== undefined) return;
     let mounted = true;
     api
       .getSubscriptionStatus()
-      .then((status) => {
-        if (mounted) setState(getSubscriptionDisplayState(status));
-      })
-      .catch(() => {
-        if (mounted) setState(null);
-      });
+      .then((s) => { if (mounted) setSelfStatus(s); })
+      .catch(() => { if (mounted) setSelfStatus(null); });
     return () => { mounted = false; };
-  }, []);
+  }, [statusFromParent]);
 
-  if (state === null) return null;
-
+  const state = useMemo(() => getSubscriptionDisplayState(status), [status]);
+  if (status === null) return null;
   const label = getSubscriptionBadgeLabel(state);
   const access = hasAccess(state);
 

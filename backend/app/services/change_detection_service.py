@@ -1,6 +1,7 @@
 """
-Hybrid change detection service that combines deterministic diffing and
-optional Groq LLM analysis.
+Hybrid change detection service: deterministic diff + Groq, with OpenAI
+fallback for in-depth human-readable comparison, business impact, and
+recommended actions when the hybrid path is insufficient.
 """
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
@@ -13,9 +14,24 @@ from app.services.extractor import extract_structured
 from app.services.diff_engine import diff_structured
 from app.services.router import decide_llm_required
 from app.services.groq_engine import GroqEngine
+from app.services.llm_service import LLMService
+from app.core.config import settings
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+def _needs_openai_fallback(
+    change_detected: bool,
+    business_impact: str,
+    recommended_action: str,
+) -> bool:
+    """Use OpenAI when a change was detected but impact/action are missing or too thin."""
+    if not change_detected:
+        return False
+    impact_ok = (business_impact or "").strip()
+    action_ok = (recommended_action or "").strip()
+    return len(impact_ok) < 20 or len(action_ok) < 20
 
 
 class ChangeDetectionService:
@@ -25,6 +41,14 @@ class ChangeDetectionService:
         self.db = db
         self.monitoring_service = MonitoringService(db)
         self.groq_engine = GroqEngine()
+        self._llm_service: Optional[LLMService] = None
+
+    def _get_llm_service(self) -> Optional[LLMService]:
+        if getattr(settings, "OPENAI_API_KEY", None):
+            if self._llm_service is None:
+                self._llm_service = LLMService()
+            return self._llm_service
+        return None
     
     async def detect_and_analyze_changes(
         self,
@@ -161,6 +185,47 @@ class ChangeDetectionService:
                 summary = "Heading changes detected"
             else:
                 summary = "Content changes detected"
+
+        # Stage 5b: OpenAI fallback for in-depth analysis when hybrid/Groq didn't provide
+        # enough business impact or recommended action (professional, reliable output).
+        human_readable_comparison: Optional[str] = None
+        if _needs_openai_fallback(change_detected, business_impact, recommended_action):
+            llm = self._get_llm_service()
+            if llm:
+                try:
+                    prev_text = previous_snapshot.cleaned_text or ""
+                    curr_text = current_snapshot.cleaned_text or ""
+                    in_depth = await llm.analyze_changes_in_depth(
+                        previous_content=prev_text,
+                        current_content=curr_text,
+                        page_url=monitored_page.url or "",
+                        page_title=getattr(monitored_page, "page_title", None) or current_snapshot.page_title,
+                        page_type=getattr(monitored_page, "page_type", None),
+                        initial_summary=summary,
+                    )
+                    human_readable_comparison = in_depth.get("human_readable_comparison") or ""
+                    if in_depth.get("business_impact"):
+                        business_impact = in_depth["business_impact"]
+                    if in_depth.get("recommended_action"):
+                        recommended_action = in_depth["recommended_action"]
+                    if in_depth.get("summary"):
+                        summary = in_depth["summary"]
+                    if in_depth.get("severity"):
+                        try:
+                            severity = Severity(in_depth["severity"])
+                            severity_score = {Severity.LOW: 1, Severity.MEDIUM: 2, Severity.HIGH: 3, Severity.CRITICAL: 4}.get(severity, 1)
+                        except (ValueError, KeyError):
+                            pass
+                    if in_depth.get("change_type"):
+                        try:
+                            change_type = ChangeType(in_depth["change_type"])
+                        except (ValueError, KeyError):
+                            pass
+                    logger.info("OpenAI in-depth analysis applied: human_readable_comparison and impact/action set")
+                except Exception as e:
+                    logger.warning("OpenAI in-depth analysis failed, using hybrid result: %s", e)
+            else:
+                logger.debug("OpenAI not configured; skipping in-depth analysis")
         
         # Stage 6: create change event
         change_event = ChangeEvent(
@@ -180,7 +245,8 @@ class ChangeDetectionService:
             diff_preview=self._generate_diff_preview(
                 previous_snapshot.cleaned_text or "",
                 current_snapshot.cleaned_text or ""
-            )
+            ),
+            human_readable_comparison=human_readable_comparison,
         )
         
         try:

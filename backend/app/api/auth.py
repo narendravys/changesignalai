@@ -7,16 +7,21 @@ from datetime import datetime, timedelta, timezone
 
 from app.core.database import get_db
 from app.core.security import (
-    get_password_hash, verify_password, 
-    create_access_token, get_current_active_user
+    get_password_hash, verify_password,
+    create_access_token, create_password_reset_token,
+    get_current_active_user,
 )
 from app.core.config import settings
 from app.models.user import User, SubscriptionStatus
 from app.models.organization import Organization
-from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
+from app.schemas.user import (
+    UserCreate, UserLogin, UserResponse, TokenResponse,
+    ForgotPasswordRequest, ResetPasswordRequest,
+)
 from app.schemas.organization import OrganizationCreate, OrganizationResponse, OrganizationRegister
 from app.utils.validators import validate_email, validate_password_strength
 from app.utils.logger import get_logger
+from app.services.email_service import email_service
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -172,6 +177,62 @@ async def login(
     )
 
 
+@router.post("/forgot-password")
+async def forgot_password(
+    data: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Request a password reset link. Always returns 200 to avoid email enumeration.
+    If the email exists and SMTP is configured, sends a reset link.
+    """
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user or not user.is_active:
+        return {"message": "If an account exists with this email, you will receive a reset link."}
+
+    token = create_password_reset_token()
+    expires = datetime.now(timezone.utc) + timedelta(minutes=settings.PASSWORD_RESET_EXPIRE_MINUTES)
+    user.password_reset_token = token
+    user.password_reset_expires = expires
+    db.commit()
+
+    reset_url = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?token={token}"
+    email_service.send_password_reset_email(to_email=user.email, reset_url=reset_url)
+    logger.info(f"Password reset requested for {user.email}")
+    return {"message": "If an account exists with this email, you will receive a reset link."}
+
+
+@router.post("/reset-password")
+async def reset_password(
+    data: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Reset password using the token from the email link.
+    """
+    is_valid, error_msg = validate_password_strength(data.new_password)
+    if not is_valid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
+
+    user = db.query(User).filter(
+        User.password_reset_token == data.token,
+        User.password_reset_expires != None,
+        User.password_reset_expires > datetime.now(timezone.utc),
+    ).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset link. Please request a new one.",
+        )
+
+    user.hashed_password = get_password_hash(data.new_password)
+    user.password_reset_token = None
+    user.password_reset_expires = None
+    db.commit()
+    logger.info(f"Password reset completed for {user.email}")
+    return {"message": "Password has been reset. You can now sign in."}
+
+
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(
     current_user: User = Depends(get_current_active_user)
@@ -254,7 +315,7 @@ async def register_organization_and_user(
         # Calculate trial end date
         trial_end_date = datetime.now(timezone.utc) + timedelta(days=new_org.trial_period_days)
         
-        # Create admin user
+        # Create first user as regular member (not admin); use scripts/create-admin-user.sh to promote if needed
         hashed_password = get_password_hash(data.user_password)
         new_user = User(
             email=data.user_email,
@@ -262,8 +323,8 @@ async def register_organization_and_user(
             full_name=data.user_full_name,
             organization_id=new_org.id,
             is_active=True,
-            is_superuser=True,  # First user is admin
-            is_admin=True,  # First user is also admin
+            is_superuser=False,
+            is_admin=False,
             subscription_status=SubscriptionStatus.TRIAL,
             trial_ends_at=trial_end_date,
             last_login=datetime.utcnow()
@@ -273,7 +334,7 @@ async def register_organization_and_user(
         db.refresh(new_org)
         db.refresh(new_user)
         
-        logger.info(f"New organization registered: {new_org.name} with admin user: {new_user.email}")
+        logger.info(f"New organization registered: {new_org.name} with user: {new_user.email}")
         
         # Create access token
         access_token = create_access_token(

@@ -5,7 +5,7 @@
 # Usage: ./scripts/create-admin-user.sh
 
 set -e
-API_URL="${NEXT_PUBLIC_API_URL:-http://localhost:8001}"
+API_URL="${NEXT_PUBLIC_API_URL:-http://localhost:8000}"
 API_VERSION="${NEXT_PUBLIC_API_VERSION:-v1}"
 BASE="$API_URL/$API_VERSION"
 
