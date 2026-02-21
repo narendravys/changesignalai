@@ -12,6 +12,7 @@ import {
 } from "react-icons/fi";
 import Link from "next/link";
 import { useToast } from "@/hooks/useToast";
+import Pagination from "@/components/Pagination";
 
 export default function CompetitorsPage() {
   const toast = useToast();
@@ -21,6 +22,8 @@ export default function CompetitorsPage() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const competitorsPageSize = 12;
   
   // Form state
   const [name, setName] = useState("");
@@ -34,6 +37,10 @@ export default function CompetitorsPage() {
   useEffect(() => {
     filterCompetitors();
   }, [competitors, searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const filterCompetitors = () => {
     if (!searchTerm) {
@@ -94,7 +101,7 @@ export default function CompetitorsPage() {
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
               <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600 font-medium">Loading competitors...</p>
+              <p className="text-gray-600 dark:text-slate-400 font-medium">Loading competitors...</p>
             </div>
           </div>
         </Layout>
@@ -113,9 +120,9 @@ export default function CompetitorsPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center space-x-3">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                  Competitors
-                </h1>
+<h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                Competitors
+              </h1>
                 {(user?.is_admin || user?.is_superuser) && (
                   <span className="px-3 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-sm font-bold flex items-center space-x-1">
                     <FiShield className="w-4 h-4" />
@@ -123,7 +130,7 @@ export default function CompetitorsPage() {
                   </span>
                 )}
               </div>
-              <p className="text-gray-600 mt-2">
+              <p className="text-gray-600 dark:text-slate-400 mt-2">
                 {(user?.is_admin || user?.is_superuser) 
                   ? "Viewing all competitors across all organizations" 
                   : "Manage the companies you're tracking"}
@@ -219,8 +226,11 @@ export default function CompetitorsPage() {
                   <p className="text-gray-500 dark:text-slate-400 text-lg">No competitors match your search</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredCompetitors.map((competitor) => (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredCompetitors
+                      .slice((currentPage - 1) * competitorsPageSize, currentPage * competitorsPageSize)
+                      .map((competitor) => (
                     <div 
                       key={competitor.id} 
                       className="group bg-white dark:bg-slate-800 rounded-2xl border-2 border-gray-100 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-xl transition-all p-6"
@@ -301,8 +311,21 @@ export default function CompetitorsPage() {
                         </button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                      ))}
+                  </div>
+                  {filteredCompetitors.length > competitorsPageSize && (
+                    <div className="mt-6 overflow-hidden rounded-2xl border-2 border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={Math.ceil(filteredCompetitors.length / competitorsPageSize)}
+                        totalItems={filteredCompetitors.length}
+                        pageSize={competitorsPageSize}
+                        onPageChange={setCurrentPage}
+                        label="competitors"
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}

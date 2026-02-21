@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, formatApiError } from "@/lib/api";
 import { useToast } from "@/hooks/useToast";
+import { useAuth } from "@/hooks/useAuth";
 import PasswordInput from "@/components/PasswordInput";
 
 export default function LoginPage() {
   const router = useRouter();
   const toast = useToast();
+  const { refreshUser } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,8 +32,9 @@ export default function LoginPage() {
 
     try {
       await api.login(email, password);
+      await refreshUser();
       toast.success("Login successful! Redirecting to dashboard...");
-      setTimeout(() => router.push("/dashboard"), 500);
+      router.push("/dashboard");
     } catch (err: any) {
       setError(formatApiError(err, "Login failed"));
       toast.error(formatApiError(err, "Login failed"));
@@ -53,8 +56,9 @@ export default function LoginPage() {
         user_password: password,
         user_full_name: fullName,
       });
+      await refreshUser();
       toast.success("Account created successfully! Welcome to ChangeSignal AI!");
-      setTimeout(() => router.push("/dashboard"), 500);
+      router.push("/dashboard");
     } catch (err: any) {
       setError(formatApiError(err, "Registration failed"));
       toast.error(formatApiError(err, "Registration failed"));

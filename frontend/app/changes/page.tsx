@@ -10,8 +10,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { 
   FiFilter, FiCheck, FiExternalLink, FiAlertCircle,
   FiClock, FiZap, FiTrendingUp, FiSearch, FiDownload, FiShield, FiCheckCircle,
-  FiTarget, FiFileText
+  FiTarget, FiFileText, FiChevronDown, FiChevronUp
 } from "react-icons/fi";
+import Pagination from "@/components/Pagination";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/useToast";
 
@@ -26,6 +27,9 @@ export default function ChangesPage() {
   const [acknowledgedFilter, setAcknowledgedFilter] = useState<string>("");
   const [changesOnlyFilter, setChangesOnlyFilter] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const changesPageSize = 10;
 
   useEffect(() => {
     loadChanges();
@@ -34,6 +38,10 @@ export default function ChangesPage() {
   useEffect(() => {
     filterChanges();
   }, [changes, searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, severityFilter, acknowledgedFilter, changesOnlyFilter]);
 
   const filterChanges = () => {
     if (!searchTerm) {
@@ -121,6 +129,21 @@ export default function ChangesPage() {
     return gradients[severity as keyof typeof gradients] || gradients.low;
   };
 
+  const toggleExpanded = (id: number) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const paginatedChanges = (() => {
+    const start = (currentPage - 1) * changesPageSize;
+    return filteredChanges.slice(start, start + changesPageSize);
+  })();
+  const changesTotalPages = Math.max(1, Math.ceil(filteredChanges.length / changesPageSize));
+
   if (loading) {
     return (
       <ProtectedRoute>
@@ -128,7 +151,7 @@ export default function ChangesPage() {
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
               <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600 font-medium">Loading change events...</p>
+              <p className="text-gray-600 dark:text-slate-400 font-medium">Loading change events...</p>
             </div>
           </div>
         </Layout>
@@ -345,134 +368,154 @@ export default function ChangesPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredChanges.map((change) => (
-                <div
-                  key={change.id}
-                  className="bg-white dark:bg-slate-800 rounded-2xl border-2 border-gray-100 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-xl transition-all p-6 group"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      {/* Badges */}
-                      <div className="flex items-center gap-3 mb-4 flex-wrap">
-                        {/* Change Detection Badge */}
-                        <span
-                          className={`px-4 py-1.5 text-xs font-bold rounded-full border-2 ${
-                            change.change_detected
-                              ? "bg-gradient-to-r from-red-500 to-orange-500 text-white border-transparent"
-                              : "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700"
-                          }`}
-                        >
-                          {change.change_detected ? "⚠️ CHANGE DETECTED" : "✓ No Change"}
-                        </span>
-                        
-                        <span
-                          className={`px-4 py-1.5 text-xs font-bold rounded-full border-2 ${getSeverityColor(
-                            change.severity
-                          )}`}
-                        >
-                          <div className={`inline-block w-2 h-2 rounded-full bg-gradient-to-r ${getSeverityGradient(change.severity)} mr-2`}></div>
-                          {change.severity.toUpperCase()}
-                        </span>
-                        
-                        <span className="px-4 py-1.5 text-xs font-bold rounded-full bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-2 border-purple-200 dark:border-purple-700">
-                          {change.change_type}
-                        </span>
-                        
-                        <span className="px-4 py-1.5 text-xs font-bold rounded-full bg-gray-50 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border-2 border-gray-200 dark:border-slate-600">
-                          {change.competitor_name}
-                        </span>
-                        
-                        {change.acknowledged && (
-                          <span className="px-4 py-1.5 text-xs font-bold rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-2 border-green-200 dark:border-green-700 flex items-center gap-2">
-                            <FiCheck className="w-3 h-3" /> Acknowledged
+              {paginatedChanges.map((change) => {
+                const isExpanded = expandedIds.has(change.id);
+                return (
+                  <div
+                    key={change.id}
+                    className="bg-white dark:bg-slate-800 rounded-2xl border-2 border-gray-100 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-xl transition-all p-6 group"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        {/* Badges row */}
+                        <div className="flex items-center gap-3 mb-3 flex-wrap">
+                          <span
+                            className={`px-4 py-1.5 text-xs font-bold rounded-full border-2 ${
+                              change.change_detected
+                                ? "bg-gradient-to-r from-red-500 to-orange-500 text-white border-transparent"
+                                : "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700"
+                            }`}
+                          >
+                            {change.change_detected ? "⚠️ CHANGE DETECTED" : "✓ No Change"}
                           </span>
+                          <span
+                            className={`px-4 py-1.5 text-xs font-bold rounded-full border-2 ${getSeverityColor(
+                              change.severity
+                            )}`}
+                          >
+                            <span className={`inline-block w-2 h-2 rounded-full bg-gradient-to-r ${getSeverityGradient(change.severity)} mr-2`} />
+                            {change.severity.toUpperCase()}
+                          </span>
+                          <span className="px-4 py-1.5 text-xs font-bold rounded-full bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-2 border-purple-200 dark:border-purple-700">
+                            {change.change_type}
+                          </span>
+                          <span className="px-4 py-1.5 text-xs font-bold rounded-full bg-gray-50 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border-2 border-gray-200 dark:border-slate-600">
+                            {change.competitor_name}
+                          </span>
+                          {change.acknowledged && (
+                            <span className="px-4 py-1.5 text-xs font-bold rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-2 border-green-200 dark:border-green-700 flex items-center gap-2">
+                              <FiCheck className="w-3 h-3" /> Acknowledged
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Summary headline – always visible */}
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
+                          {change.summary}
+                        </h3>
+
+                        {/* Collapsed: date + link only */}
+                        <div className="flex items-center gap-4 text-sm flex-wrap">
+                          <div className="flex items-center text-gray-500 dark:text-slate-500">
+                            <FiClock className="w-4 h-4 mr-2 flex-shrink-0" />
+                            {format(new Date(change.created_at), "MMM d, yyyy 'at' h:mm a")}
+                          </div>
+                          <a
+                            href={change.page_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+                          >
+                            View Page
+                            <FiExternalLink className="w-4 h-4 ml-1" />
+                          </a>
+                        </div>
+
+                        {/* Expanded: full details */}
+                        {isExpanded && (
+                          <>
+                            {change.change_detected && change.human_readable_comparison?.trim() && (
+                              <div className="mt-5 mb-5">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <FiFileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                  <span className="text-sm font-bold text-gray-800 dark:text-slate-200">What changed</span>
+                                </div>
+                                <div className="p-4 bg-gray-50/80 dark:bg-slate-700/80 rounded-xl border border-gray-200 dark:border-slate-600 text-gray-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">
+                                  {change.human_readable_comparison.trim()}
+                                </div>
+                              </div>
+                            )}
+                            {change.change_detected && (
+                              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                                <div className="p-4 rounded-xl border-2 border-amber-100 dark:border-amber-800 bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-900/20 dark:to-orange-900/20">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <FiZap className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                    <span className="text-sm font-bold text-amber-900 dark:text-amber-200">Business impact</span>
+                                  </div>
+                                  <p className="text-sm text-gray-700 dark:text-slate-300 leading-relaxed">
+                                    {change.business_impact?.trim() || "Impact analysis will appear here after the next analysis run."}
+                                  </p>
+                                </div>
+                                <div className="p-4 rounded-xl border-2 border-emerald-100 dark:border-emerald-800 bg-gradient-to-br from-emerald-50/80 to-green-50/50 dark:from-emerald-900/20 dark:to-green-900/20">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <FiTarget className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                    <span className="text-sm font-bold text-emerald-900 dark:text-emerald-200">Recommended action</span>
+                                  </div>
+                                  <p className="text-sm text-gray-700 dark:text-slate-300 leading-relaxed">
+                                    {change.recommended_action?.trim() || "Recommended next steps will appear here after analysis."}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
 
-                      {/* Summary headline */}
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                        {change.summary}
-                      </h3>
-
-                      {/* What changed – human-readable comparison (primary content) */}
-                      {change.change_detected && (
-                        <div className="mb-5">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <FiFileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                            <span className="text-sm font-bold text-gray-800 dark:text-slate-200">
-                              What changed
-                            </span>
-                          </div>
-                          {change.human_readable_comparison?.trim() ? (
-                            <div className="p-4 bg-gray-50/80 dark:bg-slate-700/80 rounded-xl border border-gray-200 dark:border-slate-600 text-gray-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">
-                              {change.human_readable_comparison.trim()}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-gray-500 dark:text-slate-500 italic">
-                              Change detected. A readable summary of what changed will appear here after the next analysis run.
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Business Impact & Recommended Action – always visible, professional cards */}
-                      <div className="grid md:grid-cols-2 gap-4 mb-4">
-                        <div className="p-4 rounded-xl border-2 border-amber-100 dark:border-amber-800 bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-900/20 dark:to-orange-900/20">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <FiZap className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                            <span className="text-sm font-bold text-amber-900 dark:text-amber-200">
-                              Business impact
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 dark:text-slate-300 leading-relaxed">
-                            {change.business_impact?.trim() || "Impact analysis will appear here after the next analysis run."}
-                          </p>
-                        </div>
-                        <div className="p-4 rounded-xl border-2 border-emerald-100 dark:border-emerald-800 bg-gradient-to-br from-emerald-50/80 to-green-50/50 dark:from-emerald-900/20 dark:to-green-900/20">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <FiTarget className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                            <span className="text-sm font-bold text-emerald-900 dark:text-emerald-200">
-                              Recommended action
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 dark:text-slate-300 leading-relaxed">
-                            {change.recommended_action?.trim() || "Recommended next steps will appear here after analysis."}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Footer */}
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center text-gray-500 dark:text-slate-500">
-                          <FiClock className="w-4 h-4 mr-2" />
-                          {format(new Date(change.created_at), "MMM d, yyyy 'at' h:mm a")}
-                        </div>
-                        
-                        <a
-                          href={change.page_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {!change.acknowledged && (
+                          <button
+                            onClick={() => handleAcknowledge(change.id)}
+                            className="px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg flex items-center space-x-2"
+                          >
+                            <FiCheck className="w-5 h-5" />
+                            <span>Acknowledge</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => toggleExpanded(change.id)}
+                          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 font-medium text-sm transition-colors"
                         >
-                          View Page
-                          <FiExternalLink className="w-4 h-4 ml-1" />
-                        </a>
+                          {isExpanded ? (
+                            <>
+                              <FiChevronUp className="w-4 h-4" />
+                              Show less
+                            </>
+                          ) : (
+                            <>
+                              <FiChevronDown className="w-4 h-4" />
+                              Show more
+                            </>
+                          )}
+                        </button>
                       </div>
                     </div>
-
-                    {/* Actions */}
-                    {!change.acknowledged && (
-                      <button
-                        onClick={() => handleAcknowledge(change.id)}
-                        className="ml-6 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg flex items-center space-x-2"
-                      >
-                        <FiCheck className="w-5 h-5" />
-                        <span>Acknowledge</span>
-                      </button>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+          )}
+
+          {filteredChanges.length > 0 && (
+            <div className="mt-4 overflow-hidden rounded-2xl border-2 border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={changesTotalPages}
+                totalItems={filteredChanges.length}
+                pageSize={changesPageSize}
+                onPageChange={setCurrentPage}
+                label="changes"
+              />
             </div>
           )}
         </div>

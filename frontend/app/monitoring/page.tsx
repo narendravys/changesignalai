@@ -12,6 +12,7 @@ import {
 } from "react-icons/fi";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/useToast";
+import Pagination from "@/components/Pagination";
 
 export default function MonitoringPage() {
   const toast = useToast();
@@ -24,6 +25,8 @@ export default function MonitoringPage() {
   const [loadError, setLoadError] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const monitoringPageSize = 10;
   
   // Form state
   const [url, setUrl] = useState("");
@@ -39,6 +42,10 @@ export default function MonitoringPage() {
   useEffect(() => {
     filterPages();
   }, [pages, searchTerm, filterStatus]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus]);
 
   const filterPages = () => {
     let filtered = pages;
@@ -144,7 +151,7 @@ export default function MonitoringPage() {
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
               <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600 font-medium">Loading monitored pages...</p>
+              <p className="text-gray-600 dark:text-slate-400 font-medium">Loading monitored pages...</p>
             </div>
           </div>
         </Layout>
@@ -160,7 +167,7 @@ export default function MonitoringPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center space-x-3">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
                   Monitored Pages
                 </h1>
                 {(user?.is_admin || user?.is_superuser) && (
@@ -170,7 +177,7 @@ export default function MonitoringPage() {
                   </span>
                 )}
               </div>
-              <p className="text-gray-600 mt-2">
+              <p className="text-gray-600 dark:text-slate-400 mt-2">
                 {(user?.is_admin || user?.is_superuser) 
                   ? "Viewing all monitored pages across all organizations" 
                   : "Track specific pages across competitor websites"}
@@ -361,7 +368,9 @@ export default function MonitoringPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredPages.map((page, index) => (
+                      {filteredPages
+                        .slice((currentPage - 1) * monitoringPageSize, currentPage * monitoringPageSize)
+                        .map((page, index) => (
                         <tr 
                           key={page.id} 
                           className={`border-b border-gray-100 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700/50 transition-colors ${
@@ -433,10 +442,21 @@ export default function MonitoringPage() {
                             </div>
                           </td>
                         </tr>
-                      ))}
+                        ))}
                     </tbody>
                   </table>
                 </div>
+
+                {filteredPages.length > monitoringPageSize && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(filteredPages.length / monitoringPageSize)}
+                    totalItems={filteredPages.length}
+                    pageSize={monitoringPageSize}
+                    onPageChange={setCurrentPage}
+                    label="pages"
+                  />
+                )}
                 
                 {filteredPages.length === 0 && (
                   <div className="text-center py-12">

@@ -158,7 +158,7 @@ export default function Layout({ children }: LayoutProps) {
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   active
                     ? "bg-blue-600 text-white dark:bg-blue-500"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-200"
+                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100"
                 } ${sidebarCollapsed ? "justify-center" : ""}`}
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />

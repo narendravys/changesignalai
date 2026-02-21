@@ -49,7 +49,7 @@ export default function AnalyticsPage() {
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
               <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600 font-medium">Loading analytics...</p>
+              <p className="text-gray-600 dark:text-slate-400 font-medium">Loading analytics...</p>
             </div>
           </div>
         </Layout>
@@ -68,7 +68,7 @@ export default function AnalyticsPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center space-x-3">
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
                   Analytics & Insights
                 </h1>
                 {(user?.is_admin || user?.is_superuser) && (
@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
                   </span>
                 )}
               </div>
-              <p className="text-gray-600 mt-2">
+              <p className="text-gray-600 dark:text-slate-400 mt-2">
                 {(user?.is_admin || user?.is_superuser)
                   ? "Viewing analytics across all organizations"
                   : changesOnly 

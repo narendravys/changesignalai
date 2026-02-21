@@ -146,6 +146,17 @@ Open your browser and navigate to:
 - **API Docs**: http://localhost:8000/v1/docs
 - **API ReDoc**: http://localhost:8000/v1/redoc
 
+**If you see "This site can't be reached" or ERR_CONNECTION_REFUSED (e.g. when using Docker in WSL2 and opening the browser on Windows):**
+
+1. **Use the port explicitly:** Try **http://127.0.0.1:3000** (frontend) and **http://127.0.0.1:8000/v1/docs** (API). Sometimes `127.0.0.1` works when `localhost` does not.
+2. **Confirm the app responds inside WSL:** In a WSL terminal run:
+   ```bash
+   curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
+   ```
+   If you get `200` or `304`, the app is up; the issue is reaching it from Windows.
+3. **Use WSL’s IP from Windows:** In WSL run `hostname -I | awk '{print $1}'`, then in your Windows browser open `http://<that-IP>:3000` (e.g. `http://172.22.1.5:3000`; replace `<that-IP>` with the number from the previous command). The IP can change after WSL restarts.
+4. **Restart WSL port forwarding:** In PowerShell (as Administrator) run `wsl --shutdown`, then open WSL again and run `docker compose up -d`. After a moment, try **http://127.0.0.1:3000** again from Windows.
+
 ### 6. Create Your First Account
 
 1. Go to http://localhost:3000
